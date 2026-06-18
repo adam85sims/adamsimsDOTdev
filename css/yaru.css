@@ -1,0 +1,115 @@
+/* Yaru-inspired theme.
+   Canonical Ubuntu palette tokens, with a few opinionated tweaks for a CV site. */
+:root {
+  /* Canonical Yaru */
+  --yaru-orange: #E95420;
+  --yaru-orange-hover: #F37D38;
+  --yaru-orange-pressed: #C84418;
+  --yaru-warm-grey: #AEA79F;
+  --yaru-cool-grey: #757575;
+  --yaru-journal: #F4F4F4;
+  --yaru-paper: #FFFFFF;
+  --yaru-ink: #2C2C2C;
+
+  /* Surfaces (dark mode) */
+  --bg-base: #2C2C2C;
+  --bg-topbar: rgba(28, 28, 28, 0.92);
+  --bg-dock: rgba(28, 28, 28, 0.85);
+  --bg-window: #F4F4F4;
+  --bg-window-header: #3D3D3D;
+  --bg-window-header-inactive: #555555;
+  --bg-desktop: #1f1f1f;
+  --bg-icon-hover: rgba(233, 84, 32, 0.18);
+  --bg-icon-active: rgba(233, 84, 32, 0.32);
+
+  /* Text */
+  --fg-primary: #2C2C2C;
+  --fg-secondary: #555555;
+  --fg-muted: #888888;
+  --fg-on-dark: #F4F4F4;
+  --fg-on-dark-muted: #B5B5B5;
+  --fg-accent: var(--yaru-orange);
+
+  /* Borders */
+  --border-window: rgba(0, 0, 0, 0.25);
+  --border-subtle: rgba(0, 0, 0, 0.08);
+
+  /* Radii */
+  --radius-window: 10px;
+  --radius-button: 6px;
+  --radius-icon: 8px;
+
+  /* Shadows */
+  --shadow-window: 0 10px 30px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.25);
+  --shadow-window-focused: 0 16px 40px rgba(0, 0, 0, 0.45), 0 4px 10px rgba(0, 0, 0, 0.3);
+  --shadow-dock: 0 -4px 20px rgba(0, 0, 0, 0.35);
+
+  /* Sizing */
+  --topbar-h: 28px;
+  --dock-h: 64px;
+  --font-ui: "Ubuntu", "Ubuntu Sans", "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "Ubuntu Mono", "JetBrains Mono", "Fira Code", "Cascadia Code", "Consolas", "Menlo", monospace;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@font-face {
+  font-family: "Ubuntu";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local("Ubuntu"), local("Ubuntu-Regular");
+}
+@font-face {
+  font-family: "Ubuntu";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: local("Ubuntu Medium"), local("Ubuntu-Medium");
+}
+@font-face {
+  font-family: "Ubuntu";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local("Ubuntu Bold"), local("Ubuntu-Bold");
+}
+@font-face {
+  font-family: "Ubuntu Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local("Ubuntu Mono"), local("UbuntuMono-Regular");
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+  color: var(--fg-on-dark);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+a { color: var(--yaru-orange); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+::selection { background: var(--yaru-orange); color: #fff; }

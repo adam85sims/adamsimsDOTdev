@@ -1,0 +1,168 @@
+{
+  "person": {
+    "name": "Adam Sims",
+    "title": "Agentic AI Engineer · AI Platform Engineer",
+    "location": "Shimonoseki, Japan (from Sep 2026) · UK Remote (now)",
+    "email": "adam@adamsims.dev",
+    "tagline": "I build tools that ship. Currently living in a terminal, building agents that actually finish the job.",
+    "status": "Available for remote contracts · open to AI Platform / Agentic Engineering roles",
+    "languages": ["English (native)", "Japanese (conversational, learning)"]
+  },
+  "summary": "Agentic AI engineer with 5+ years in regulated public-service environments and a track record of shipping integrated creative tools. Specialised in LLM-orchestrated workflows, local-first AI platforms, and turning ambiguous problems into working products. Comfortable owning the full stack — from governance and guardrail design through to the deploy, the dev container, and the docs the next person will read.",
+  "experience": [
+    {
+      "company": "Independent / Open Source",
+      "role": "Founder, Engineer, Maintainer",
+      "period": "2022 — Present",
+      "location": "Remote (UK → Japan)",
+      "highlights": [
+        "Shipped NX-Writer — an integrated creative environment for fiction writers (Electron + TypeScript). Real customers, real revenue, real support burden.",
+        "Authored and sold multiple game asset packs and tools on itch.io and Gumroad.",
+        "Currently shipping Phaser-NGE — a visual novel / narrative game engine built on top of Phaser 3, with its own scene editor, asset pipeline, and Ink integration.",
+        "Day-to-day stack: Linux (Fedora primary), Neovim, tmux, Docker, Ollama, ComfyUI, custom Bash + Python tooling."
+      ]
+    },
+    {
+      "company": "Public Service Organisation (UK)",
+      "role": "Risk Manager",
+      "period": "5 years",
+      "location": "UK",
+      "highlights": [
+        "Owned the risk register, control framework, and incident response for a regulated function.",
+        "Designed and enforced guardrails — the same muscle that maps directly onto LLM agent safety, output validation, and policy enforcement.",
+        "Translated between engineering, compliance, and senior leadership without losing fidelity at any boundary.",
+        "Postgraduate in Software Development — kept the engineering edge sharp while the day job paid the bills."
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "id": "nx-writer",
+      "name": "NX-Writer",
+      "tagline": "Integrated creative environment for fiction writers",
+      "status": "Shipped · For sale",
+      "stack": ["Electron", "TypeScript", "CodeMirror 6", "React", "Vite"],
+      "url": "https://nx-writer.app",
+      "highlights": [
+        "Real product. Real users. Real money. Built solo over months, sold on a public storefront.",
+        "Custom editor with project tree, character/scene/world databases, distraction-free mode, and a manuscript export pipeline.",
+        "Owned every layer — UI, persistence, packaging, auto-update, licensing, support."
+      ]
+    },
+    {
+      "id": "phaser-nge",
+      "name": "Phaser-NGE",
+      "tagline": "Visual novel / narrative game engine on Phaser 3",
+      "status": "In development · Showable demo soon",
+      "stack": ["Phaser 3", "TypeScript", "Vite", "Ink (Inkle)", "CodeDOM"],
+      "highlights": [
+        "Custom Phaser 3 scene editor with type-aware inspectors, CodeDOM-driven code generation, and a Unity-style file browser.",
+        "Designed for writers and solo devs — data files, not naming conventions, drive the engine.",
+        "Engine target: the 'Dave is Drowning' apocalyptic VN, and any other narrative game that wants a real editor."
+      ]
+    },
+    {
+      "id": "hermes",
+      "name": "Hermes Agent",
+      "tagline": "CLI AI agent orchestration platform (Nous Research)",
+      "status": "Active development · Daily driver",
+      "stack": ["Python", "MCP (Model Context Protocol)", "Skills system", "Multi-provider routing"],
+      "highlights": [
+        "Deep daily user. The thing that's writing this page, running my dev environment, and routing my LLM traffic.",
+        "Composed of skills, plugins, cron jobs, and a native MCP client. I extend it, break it, and ship patches back.",
+        "Used as the substrate for most of my agentic workflows — code review, repo maintenance, scheduled jobs, multi-agent delegation."
+      ]
+    },
+    {
+      "id": "opencode",
+      "name": "OpenCode / Crush / Antigravity",
+      "tagline": "OpenCode CLI · Crush terminal UI · Antigravity IDE — daily driver for AI-assisted coding",
+      "status": "Daily driver",
+      "stack": ["Go", "TypeScript", "Provider adapters", "Headroom routing"],
+      "highlights": [
+        "OpenCode as my primary coding agent CLI. Crush as the terminal UI when I want a TUI. Antigravity for IDE-grade sessions.",
+        "Routed through Headroom (chopratejas/headroom) — an OpenCode-compatible routing proxy that runs on systemd at home, cutting my LLM spend dramatically.",
+        "Multi-provider strategy: native provider for direct calls, Headroom for anything that benefits from caching/routing."
+      ]
+    },
+    {
+      "id": "comfyui-pipelines",
+      "name": "ComfyUI Pipelines",
+      "tagline": "Local image generation stack on AMD ROCm",
+      "status": "Operational · In daily use",
+      "stack": ["ComfyUI", "PyTorch 2.9 ROCm", "Anima v1.0", "SDXL + IP-Adapter FaceID", "Custom workflows"],
+      "highlights": [
+        "Local ComfyUI server on an AMD RX 9060 XT (17GB VRAM). 1100+ nodes loaded.",
+        "Production workflows for character-consistent art (IP-Adapter FaceID), game asset generation (Anima), and training data prep.",
+        "Runs alongside the rest of the stack — same machine, same backup, same Tailscale tail."
+      ]
+    },
+    {
+      "id": "headroom",
+      "name": "Headroom",
+      "tagline": "OpenCode-compatible LLM routing proxy",
+      "status": "In production at home",
+      "stack": ["Go", "OpenAI-compatible API", "Caching", "Routing rules"],
+      "highlights": [
+        "Chopratejas/headroom — runs on :8787 at home, exposed to my dev machine over Tailscale.",
+        "Cuts LLM API spend by routing repeated prompt prefixes through a cache. Real, measurable savings.",
+        "Systemd user unit with linger=yes — survives reboots, doesn't need a babysitter."
+      ]
+    }
+  ],
+  "skills": {
+    "Agentic AI & LLMs": [
+      "Agentic workflow design (Claude Code, OpenCode, Hermes, custom MCP servers)",
+      "MCP (Model Context Protocol) — server authoring, tool registration, native clients",
+      "LLM routing & cost optimisation (Headroom, prompt caching, provider failover)",
+      "Skills / plugin architectures (composable, discoverable, versioned)",
+      "Guardrail design (output validation, policy enforcement, tool-call sandboxing)",
+      "Multi-agent orchestration & delegation"
+    ],
+    "Engineering": [
+      "TypeScript / Python / Go / Bash / C#",
+      "Electron, React, Vite, Svelte",
+      "Phaser 3, Ink, custom scene editors",
+      "Node.js, tsc, vitest, eslint",
+      "Docker, systemd, Tailscale",
+      "Neovim + tmux as a primary IDE"
+    ],
+    "Platform & Infra": [
+      "Linux (Fedora primary, Ubuntu/Yaru at heart, Arch dabblings)",
+      "ROCm / CUDA / local inference (llama.cpp, Ollama, ComfyUI)",
+      "Hugging Face Hub, model downloads, LoRA training",
+      "Cloudflare Pages / S3 / static deploys",
+      "Systemd user services, linger, auto-restart"
+    ],
+    "Governance, Risk & Compliance (GRC)": [
+      "Risk register ownership in a regulated public service",
+      "Control framework design and enforcement",
+      "Incident response and post-incident review",
+      "Stakeholder translation: engineering ↔ compliance ↔ leadership",
+      "Guardrail design that maps cleanly onto LLM agent safety"
+    ],
+    "Product & Shipping": [
+      "Solo founder of a sold product (NX-Writer) — every role, every day",
+      "Public storefronts (itch.io, Gumroad), payment, licensing, support",
+      "Asset pack creation, marketing pages, product-led growth"
+    ]
+  },
+  "education": [
+    {
+      "qualification": "Postgraduate Diploma, Software Development",
+      "institution": "UK University",
+      "year": "Recent"
+    },
+    {
+      "qualification": "BSc (Hons), Software Development",
+      "institution": "UK University",
+      "year": "Recent"
+    }
+  ],
+  "interests": [
+    "Visual novels and narrative games (currently building one)",
+    "Open-source maintainership and contribution",
+    "Local-first AI and self-hosted tooling",
+    "Moving to Shimonoseki, learning Japanese, eating fugu (responsibly)"
+  ]
+}

@@ -1,0 +1,196 @@
+/* Desktop chrome: wallpaper, top bar, dock, boot screen, desktop icons */
+.desktop {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-rows: var(--topbar-h) 1fr var(--dock-h);
+  background:
+    radial-gradient(circle at 20% 30%, rgba(233, 84, 32, 0.18), transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(80, 110, 200, 0.12), transparent 55%),
+    linear-gradient(180deg, #1f1f1f 0%, #161616 100%);
+}
+
+/* Top bar */
+.topbar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 0 8px;
+  background: var(--bg-topbar);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--fg-on-dark);
+  z-index: 1000;
+  user-select: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.topbar-left, .topbar-right { display: flex; align-items: center; gap: 8px; }
+.topbar-right { justify-content: flex-end; }
+.topbar-center { font-weight: 500; font-size: 13px; }
+.topbar-activities {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--fg-on-dark);
+  transition: background 120ms var(--ease-out);
+}
+.topbar-activities:hover { background: rgba(255, 255, 255, 0.08); }
+.topbar-activities:active { background: rgba(255, 255, 255, 0.14); }
+.topbar-pill {
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(46, 204, 113, 0.18);
+  color: #58d68d;
+  border: 1px solid rgba(46, 204, 113, 0.35);
+}
+
+/* Desktop icons (grid on left) */
+.desktop-icons {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 88px);
+  grid-auto-rows: 96px;
+  gap: 6px;
+  padding: 16px;
+  align-content: start;
+  overflow: hidden;
+}
+.desktop-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 8px 4px;
+  border-radius: var(--radius-icon);
+  color: var(--fg-on-dark);
+  text-align: center;
+  cursor: pointer;
+  transition: background 120ms var(--ease-out);
+  user-select: none;
+}
+.desktop-icon:hover { background: var(--bg-icon-hover); }
+.desktop-icon:active { background: var(--bg-icon-active); }
+.desktop-icon-img {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--yaru-orange);
+}
+.desktop-icon-label {
+  font-size: 11px;
+  line-height: 1.2;
+  max-width: 80px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+/* Dock */
+.dock {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-dock);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-dock);
+  z-index: 1000;
+  user-select: none;
+}
+.dock-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  min-width: 56px;
+  color: var(--fg-on-dark);
+  transition: background 120ms var(--ease-out), transform 120ms var(--ease-out);
+}
+.dock-item:hover { background: rgba(255, 255, 255, 0.08); transform: translateY(-2px); }
+.dock-item:active { transform: translateY(0); }
+.dock-item.is-running { background: rgba(233, 84, 32, 0.12); }
+.dock-item.is-running::after {
+  content: "";
+  display: block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--yaru-orange);
+}
+.dock-item-icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  color: var(--yaru-orange);
+}
+.dock-item-label { font-size: 10px; opacity: 0.85; }
+
+/* Boot screen */
+.boot {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  background: #0a0a0a;
+  color: var(--fg-on-dark);
+  z-index: 2000;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+.boot-logo { animation: boot-pulse 1.6s ease-in-out infinite; }
+@keyframes boot-pulse {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.04); }
+}
+.boot-brand {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 18px;
+  letter-spacing: 0.02em;
+  color: var(--yaru-orange);
+}
+.boot-progress {
+  width: 220px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.boot-progress-bar {
+  width: 0%;
+  height: 100%;
+  background: var(--yaru-orange);
+  border-radius: 2px;
+  transition: width 280ms var(--ease-out);
+}
+.boot-log {
+  width: 360px;
+  max-width: 80vw;
+  height: 80px;
+  overflow: hidden;
+  font-size: 11px;
+  color: var(--fg-on-dark-muted);
+  line-height: 1.6;
+  text-align: left;
+  white-space: pre;
+  font-family: var(--font-mono);
+}
+.boot.is-done {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 480ms var(--ease-out);
+}
