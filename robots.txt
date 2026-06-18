@@ -1,0 +1,7 @@
+# adamsims.dev
+User-agent: *
+Allow: /
+Disallow: /?print=1
+Disallow: /?pdf=1
+
+Sitemap: https://adamsims.dev/sitemap.xml

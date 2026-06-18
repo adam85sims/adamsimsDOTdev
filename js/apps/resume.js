@@ -95,10 +95,24 @@ export function renderResume(cv) {
         `).join("")}
       </section>
 
-      <section class="resume-section resume-section-last">
-        <h2>Languages</h2>
-        <p>${p.languages.map(escape).join(" · ")}</p>
-      </section>
+      ${cv.interests && cv.interests.length ? `
+      <section class="resume-section">
+        <h2>Interests</h2>
+        <p class="resume-summary">${cv.interests.map(escape).join(" · ")}</p>
+      </section>` : ""}
+
+      <div class="resume-section-pair">
+        <section class="resume-section">
+          <h2>Languages</h2>
+          <p>${p.languages.map(escape).join(" · ")}</p>
+        </section>
+        <section class="resume-section resume-section-last">
+          <h2>Links</h2>
+          <p class="resume-links">
+            ${(cv.links || []).map(l => `<a href="${escape(l.href)}">${escape(l.value)}</a>`).join(" · ")}
+          </p>
+        </section>
+      </div>
     </article>
   `;
 

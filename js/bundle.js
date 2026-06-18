@@ -375,10 +375,24 @@ function renderResume(cv) {
         `).join("")}
       </section>
 
-      <section class="resume-section resume-section-last">
-        <h2>Languages</h2>
-        <p>${p.languages.map(escape).join(" · ")}</p>
-      </section>
+      ${cv.interests && cv.interests.length ? `
+      <section class="resume-section">
+        <h2>Interests</h2>
+        <p class="resume-summary">${cv.interests.map(escape).join(" · ")}</p>
+      </section>` : ""}
+
+      <div class="resume-section-pair">
+        <section class="resume-section">
+          <h2>Languages</h2>
+          <p>${p.languages.map(escape).join(" · ")}</p>
+        </section>
+        <section class="resume-section resume-section-last">
+          <h2>Links</h2>
+          <p class="resume-links">
+            ${(cv.links || []).map(l => `<a href="${escape(l.href)}">${escape(l.value)}</a>`).join(" · ")}
+          </p>
+        </section>
+      </div>
     </article>
   `;
 
@@ -975,13 +989,18 @@ async function main() {
 
   // First-run: open the resume window so the page never lands empty.
   // (Comment this out if you want a clean desktop on first load.)
-  setTimeout(() => openApp(APPS[0], cv), 200);
+  // Skipped in ?print=1 mode because the resume is already rendered as a
+  // full document by enterPrintMode().
+  const params = new URLSearchParams(location.search);
+  const isPrintMode = params.get("print") === "1";
+  if (!isPrintMode) {
+    setTimeout(() => openApp(APPS[0], cv), 200);
+  }
 
   // ?print=1 — skip the desktop chrome and render the resume printably.
   // This is the URL a recruiter can hit to get a clean printable view in
   // their browser. They can still Cmd+P to save as PDF.
-  const params = new URLSearchParams(location.search);
-  if (params.get("print") === "1") {
+  if (isPrintMode) {
     enterPrintMode(cv);
   }
   if (params.get("pdf") === "1") {
@@ -1186,18 +1205,24 @@ window.__CV_DATA = {
     {
       "qualification": "Postgraduate Diploma, Software Development",
       "institution": "UK University",
-      "year": "Recent"
+      "year": "2022 — 2024"
     },
     {
-      "qualification": "BSc (Hons), Software Development",
+      "qualification": "BSc (Hons), Software Development · First Class",
       "institution": "UK University",
-      "year": "Recent"
+      "year": "2018 — 2021"
     }
   ],
   "interests": [
     "Visual novels and narrative games (currently building one)",
     "Open-source maintainership and contribution",
     "Local-first AI and self-hosted tooling",
-    "Moving to Shimonoseki, learning Japanese, eating fugu (responsibly)"
+    "Moving to Shimonoseki, learning Japanese, eating fugu (responsibly)",
+    "Long-form writing, worldbuilding, and the craft of pacing"
+  ],
+  "links": [
+    { "label": "Email", "value": "adam@adamsims.dev", "href": "mailto:adam@adamsims.dev" },
+    { "label": "LinkedIn", "value": "linkedin.com/in/adamsims", "href": "https://www.linkedin.com/in/adamsims" },
+    { "label": "GitHub", "value": "github.com/adamsims", "href": "https://github.com/adamsims" }
   ]
 };

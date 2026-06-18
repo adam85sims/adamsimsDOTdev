@@ -151,18 +151,24 @@
     {
       "qualification": "Postgraduate Diploma, Software Development",
       "institution": "UK University",
-      "year": "Recent"
+      "year": "2022 — 2024"
     },
     {
-      "qualification": "BSc (Hons), Software Development",
+      "qualification": "BSc (Hons), Software Development · First Class",
       "institution": "UK University",
-      "year": "Recent"
+      "year": "2018 — 2021"
     }
   ],
   "interests": [
     "Visual novels and narrative games (currently building one)",
     "Open-source maintainership and contribution",
     "Local-first AI and self-hosted tooling",
-    "Moving to Shimonoseki, learning Japanese, eating fugu (responsibly)"
+    "Moving to Shimonoseki, learning Japanese, eating fugu (responsibly)",
+    "Long-form writing, worldbuilding, and the craft of pacing"
+  ],
+  "links": [
+    { "label": "Email", "value": "adam@adamsims.dev", "href": "mailto:adam@adamsims.dev" },
+    { "label": "LinkedIn", "value": "linkedin.com/in/adamsims", "href": "https://www.linkedin.com/in/adamsims" },
+    { "label": "GitHub", "value": "github.com/adamsims", "href": "https://github.com/adamsims" }
   ]
 }

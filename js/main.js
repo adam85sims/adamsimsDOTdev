@@ -156,13 +156,18 @@ async function main() {
 
   // First-run: open the resume window so the page never lands empty.
   // (Comment this out if you want a clean desktop on first load.)
-  setTimeout(() => openApp(APPS[0], cv), 200);
+  // Skipped in ?print=1 mode because the resume is already rendered as a
+  // full document by enterPrintMode().
+  const params = new URLSearchParams(location.search);
+  const isPrintMode = params.get("print") === "1";
+  if (!isPrintMode) {
+    setTimeout(() => openApp(APPS[0], cv), 200);
+  }
 
   // ?print=1 — skip the desktop chrome and render the resume printably.
   // This is the URL a recruiter can hit to get a clean printable view in
   // their browser. They can still Cmd+P to save as PDF.
-  const params = new URLSearchParams(location.search);
-  if (params.get("print") === "1") {
+  if (isPrintMode) {
     enterPrintMode(cv);
   }
   if (params.get("pdf") === "1") {
