@@ -3,10 +3,13 @@
     "name": "Adam Sims",
     "title": "Agentic AI Engineer · AI Platform Engineer",
     "location": "Shimonoseki, Japan (from Sep 2026) · UK Remote (now)",
-    "email": "adam@adamsims.dev",
+    "email": "adam@thenetherwatch.com",
     "tagline": "I build tools that ship. Currently living in a terminal, building agents that actually finish the job.",
     "status": "Available for remote contracts · open to AI Platform / Agentic Engineering roles",
-    "languages": ["English (native)", "Japanese (conversational, learning)"]
+    "languages": [
+      "English (native)",
+      "Japanese (conversational, learning)"
+    ]
   },
   "summary": "Agentic AI engineer with 5+ years in regulated public-service environments and a track record of shipping integrated creative tools. Specialised in LLM-orchestrated workflows, local-first AI platforms, and turning ambiguous problems into working products. Comfortable owning the full stack — from governance and guardrail design through to the deploy, the dev container, and the docs the next person will read.",
   "experience": [
@@ -41,7 +44,13 @@
       "name": "NX-Writer",
       "tagline": "Integrated creative environment for fiction writers",
       "status": "Shipped · For sale",
-      "stack": ["Electron", "TypeScript", "CodeMirror 6", "React", "Vite"],
+      "stack": [
+        "Electron",
+        "TypeScript",
+        "CodeMirror 6",
+        "React",
+        "Vite"
+      ],
       "url": "https://nx-writer.app",
       "highlights": [
         "Real product. Real users. Real money. Built solo over months, sold on a public storefront.",
@@ -54,7 +63,13 @@
       "name": "Phaser-NGE",
       "tagline": "Visual novel / narrative game engine on Phaser 3",
       "status": "In development · Showable demo soon",
-      "stack": ["Phaser 3", "TypeScript", "Vite", "Ink (Inkle)", "CodeDOM"],
+      "stack": [
+        "Phaser 3",
+        "TypeScript",
+        "Vite",
+        "Ink (Inkle)",
+        "CodeDOM"
+      ],
       "highlights": [
         "Custom Phaser 3 scene editor with type-aware inspectors, CodeDOM-driven code generation, and a Unity-style file browser.",
         "Designed for writers and solo devs — data files, not naming conventions, drive the engine.",
@@ -66,7 +81,12 @@
       "name": "Hermes Agent",
       "tagline": "CLI AI agent orchestration platform (Nous Research)",
       "status": "Active development · Daily driver",
-      "stack": ["Python", "MCP (Model Context Protocol)", "Skills system", "Multi-provider routing"],
+      "stack": [
+        "Python",
+        "MCP (Model Context Protocol)",
+        "Skills system",
+        "Multi-provider routing"
+      ],
       "highlights": [
         "Deep daily user. The thing that's writing this page, running my dev environment, and routing my LLM traffic.",
         "Composed of skills, plugins, cron jobs, and a native MCP client. I extend it, break it, and ship patches back.",
@@ -78,7 +98,12 @@
       "name": "OpenCode / Crush / Antigravity",
       "tagline": "OpenCode CLI · Crush terminal UI · Antigravity IDE — daily driver for AI-assisted coding",
       "status": "Daily driver",
-      "stack": ["Go", "TypeScript", "Provider adapters", "Headroom routing"],
+      "stack": [
+        "Go",
+        "TypeScript",
+        "Provider adapters",
+        "Headroom routing"
+      ],
       "highlights": [
         "OpenCode as my primary coding agent CLI. Crush as the terminal UI when I want a TUI. Antigravity for IDE-grade sessions.",
         "Routed through Headroom (chopratejas/headroom) — an OpenCode-compatible routing proxy that runs on systemd at home, cutting my LLM spend dramatically.",
@@ -90,7 +115,13 @@
       "name": "ComfyUI Pipelines",
       "tagline": "Local image generation stack on AMD ROCm",
       "status": "Operational · In daily use",
-      "stack": ["ComfyUI", "PyTorch 2.9 ROCm", "Anima v1.0", "SDXL + IP-Adapter FaceID", "Custom workflows"],
+      "stack": [
+        "ComfyUI",
+        "PyTorch 2.9 ROCm",
+        "Anima v1.0",
+        "SDXL + IP-Adapter FaceID",
+        "Custom workflows"
+      ],
       "highlights": [
         "Local ComfyUI server on an AMD RX 9060 XT (17GB VRAM). 1100+ nodes loaded.",
         "Production workflows for character-consistent art (IP-Adapter FaceID), game asset generation (Anima), and training data prep.",
@@ -102,7 +133,12 @@
       "name": "Headroom",
       "tagline": "OpenCode-compatible LLM routing proxy",
       "status": "In production at home",
-      "stack": ["Go", "OpenAI-compatible API", "Caching", "Routing rules"],
+      "stack": [
+        "Go",
+        "OpenAI-compatible API",
+        "Caching",
+        "Routing rules"
+      ],
       "highlights": [
         "Chopratejas/headroom — runs on :8787 at home, exposed to my dev machine over Tailscale.",
         "Cuts LLM API spend by routing repeated prompt prefixes through a cache. Real, measurable savings.",
@@ -150,11 +186,11 @@
   "education": [
     {
       "qualification": "Postgraduate Diploma, Software Development",
-      "institution": "UK University",
-      "year": "2022 — 2024"
+      "institution": "Ulster University",
+      "year": "2022 — 2023"
     },
     {
-      "qualification": "BSc (Hons), Software Development · First Class",
+      "qualification": "BSc (Hons), Software Development",
       "institution": "UK University",
       "year": "2018 — 2021"
     }
@@ -167,8 +203,20 @@
     "Long-form writing, worldbuilding, and the craft of pacing"
   ],
   "links": [
-    { "label": "Email", "value": "adam@adamsims.dev", "href": "mailto:adam@adamsims.dev" },
-    { "label": "LinkedIn", "value": "linkedin.com/in/adamsims", "href": "https://www.linkedin.com/in/adamsims" },
-    { "label": "GitHub", "value": "github.com/adamsims", "href": "https://github.com/adamsims" }
+    {
+      "label": "Email",
+      "value": "adam@thenetherwatch.com",
+      "href": "mailto:adam@thenetherwatch.com"
+    },
+    {
+      "label": "LinkedIn",
+      "value": "linkedin.com/in/adam-sims-271525249",
+      "href": "https://www.linkedin.com/in/adam-sims-271525249/"
+    },
+    {
+      "label": "GitHub",
+      "value": "github.com/adam85sims",
+      "href": "https://github.com/adam85sims"
+    }
   ]
 }
