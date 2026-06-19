@@ -59,6 +59,21 @@
     height: auto !important;
   }
 
+  /* Override dark-mode CSS custom properties so every element using
+     var(--fg-on-dark) etc. resolves to print-safe dark-on-white values.
+     This is necessary because CSS variables are resolved before cascade,
+     so !important on a specific color rule won't fix a var() reference. */
+  :root {
+    --fg-primary: #1a1a1a;
+    --fg-secondary: #444444;
+    --fg-muted: #666666;
+    --fg-on-dark: #1a1a1a;
+    --fg-on-dark-muted: #555555;
+    --fg-accent: #C84418;
+    --bg-window: #ffffff;
+    --bg-base: #ffffff;
+  }
+
   /* Reset the page background — no Yaru wallpaper in a CV */
   html, body {
     background: #fff !important;
