@@ -7,6 +7,21 @@
         Applied via .is-print-mode on <body>.
      3. /?pdf=1 — same as 2 but auto-triggers the print dialog. */
 
+/* Hide the transient print container on screen — it's only meant for @media
+   print. We can't use display:none inline because that beats !important in
+   the print stylesheet and causes blank pages. */
+@media screen {
+  #print-temp {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    visibility: hidden;
+  }
+}
+
 /* --- Always hide things that should never appear in a printout --- */
 @media print {
   /* Hide the entire desktop chrome */

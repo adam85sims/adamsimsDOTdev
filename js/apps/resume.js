@@ -134,7 +134,10 @@ export function triggerPrint() {
     preparePrintView();
   }
   document.dispatchEvent(new CustomEvent("cv:print"));
-  requestAnimationFrame(() => window.print());
+  // Double rAF: first frame lets the DOM mutation + class change paint;
+  // second frame gives the browser time to recalculate styles before the
+  // print dialog freezes the layout. Prevents blank-page issues.
+  requestAnimationFrame(() => requestAnimationFrame(() => window.print()));
 }
 
 // Move the resume element from its window into a standalone print-page
@@ -149,7 +152,10 @@ function preparePrintView() {
   const printRoot = document.createElement("div");
   printRoot.className = "print-page";
   printRoot.id = "print-temp";
-  printRoot.style.display = "none";
+  // No display:none — the element is invisible on screen because no @media
+  // screen rule targets #print-temp, but it must be in the render tree so
+  // @media print can show it. An inline display:none would fight the
+  // !important override in the print stylesheet and can cause blank pages.
   printRoot.appendChild(resumeEl);
   document.body.appendChild(printRoot);
   document.body.classList.add("is-printing");
