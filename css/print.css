@@ -25,6 +25,7 @@
 /* --- Always hide things that should never appear in a printout --- */
 @media print {
   /* Hide the entire desktop chrome */
+  .desktop,
   .topbar,
   .dock,
   .desktop-icons,
