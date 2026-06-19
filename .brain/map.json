@@ -1,0 +1,14 @@
+{
+  "entry_points": [
+    "index.html"
+  ],
+  "scripts": {
+    "bundle.sh": "scripts/bundle.sh (bundles CSS and JS)"
+  },
+  "directories": {
+    "css": "Individual CSS files",
+    "js": "Individual JS files and bundled outputs",
+    "js/apps": "App modules for the CV desktop",
+    "data": "JSON data like cv.json"
+  }
+}

@@ -155,14 +155,20 @@ const WM = (() => {
     const el = document.createElement("div");
     el.className = "window";
     el.dataset.id = id;
-    el.style.width = `${width}px`;
-    el.style.height = `${height}px`;
 
-    // Position with cascade
+    // Cap window dimensions to the available viewport so mobile users
+    // never get an overlay that overflows the screen.
     const layerRect = layer.getBoundingClientRect();
+    const pad = 12;
+    const cappedW = Math.min(width, layerRect.width - pad);
+    const cappedH = Math.min(height, layerRect.height - pad);
+    el.style.width = `${cappedW}px`;
+    el.style.height = `${cappedH}px`;
+
+    // Position with cascade, using the capped dimensions
     const cascade = (windows.size % 8) * 28;
-    const left = x ?? Math.max(20, (layerRect.width - width) / 2 + cascade - 80);
-    const top = y ?? Math.max(10, (layerRect.height - height) / 2 + cascade - 60);
+    const left = x ?? Math.max(pad, (layerRect.width - cappedW) / 2 + cascade - 80);
+    const top = y ?? Math.max(pad, (layerRect.height - cappedH) / 2 + cascade - 60);
     el.style.left = `${left}px`;
     el.style.top = `${top}px`;
 

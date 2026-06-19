@@ -974,3 +974,100 @@ a:hover { text-decoration: underline; }
     font-size: 10px;
   }
 }
+
+/* ========== responsive.css ========== */
+/* Mobile / small-screen responsive overrides.
+   Cap window sizes to viewport so overlays fit on the screen,
+   tighten content padding, and shrink chrome. */
+
+@media (max-width: 820px) {
+  /* ---- Windows: never overflow the viewport ---- */
+  .window {
+    max-width: calc(100vw - 12px);
+    max-height: calc(100vh - var(--topbar-h) - var(--dock-h) - 12px);
+    min-width: 240px;
+  }
+
+  /* ---- Resume app ---- */
+  .resume { padding: 14px 16px; }
+  .resume-name { font-size: 20px; }
+  .resume-title { font-size: 12px; }
+  .resume-meta { gap: 6px 12px; font-size: 11px; }
+  .resume-section { margin: 18px 0; }
+  .exp-head { flex-direction: column; align-items: flex-start; gap: 2px; }
+  .exp-role { font-size: 13px; }
+  .skill-grid { grid-template-columns: 1fr; }
+
+  /* ---- Projects app ---- */
+  .projects {
+    padding: 10px;
+    grid-template-columns: 1fr;
+  }
+  .project-card { padding: 10px 12px; }
+  .project-head { flex-direction: column; gap: 4px; }
+  .project-name { font-size: 14px; }
+
+  /* ---- Skills app ---- */
+  .skills {
+    padding: 10px;
+    grid-template-columns: 1fr;
+  }
+  .skill-card { padding: 10px; }
+
+  /* ---- About app ---- */
+  .about { padding: 14px 16px; }
+  .about h2 { font-size: 18px; }
+
+  /* ---- Contact app ---- */
+  .contact { padding: 14px 16px; }
+  .contact-row { grid-template-columns: 1fr; gap: 2px; padding: 8px 0; }
+  .contact-label { font-size: 10px; }
+
+  /* ---- Terminal ---- */
+  .terminal { font-size: 12px; }
+  .terminal-output { padding: 8px 10px; }
+  .terminal-input-line { padding: 0 10px 10px; }
+
+  /* ---- Dock: compact ---- */
+  .dock { gap: 4px; padding: 4px 6px; }
+  .dock-item { min-width: 40px; padding: 4px 6px; }
+  .dock-item-icon { width: 26px; height: 26px; }
+  .dock-item-icon svg { width: 20px; height: 20px; }
+  .dock-item-label { font-size: 9px; }
+
+  /* ---- Top bar: compact ---- */
+  .topbar { padding: 0 4px; }
+  .topbar-center { font-size: 11px; }
+  .topbar-pill { font-size: 10px; padding: 2px 6px; }
+  .topbar-activities { font-size: 10px; padding: 2px 6px; }
+  .topbar-activities svg { width: 12px; height: 12px; }
+
+  /* ---- Desktop icons: compact ---- */
+  .desktop-icons {
+    grid-template-columns: repeat(auto-fill, 68px);
+    grid-auto-rows: 74px;
+    gap: 4px;
+    padding: 8px;
+  }
+  .desktop-icon { padding: 4px 2px; }
+  .desktop-icon-img { width: 36px; height: 36px; }
+  .desktop-icon-img svg { width: 18px; height: 18px; }
+  .desktop-icon-label { font-size: 9px; max-width: 64px; }
+}
+
+@media (max-width: 480px) {
+  /* Very narrow screens: reduce min-height on windows */
+  .window { min-height: 140px; }
+
+  /* Even tighter content */
+  .resume { padding: 10px 12px; }
+  .resume-name { font-size: 18px; }
+  .resume-header { padding-bottom: 10px; margin-bottom: 16px; }
+
+  .projects { padding: 8px; }
+  .about { padding: 10px 12px; }
+  .contact { padding: 10px 12px; }
+
+  .dock-item { min-width: 34px; padding: 3px 4px; }
+  .dock-item-icon { width: 22px; height: 22px; }
+}
