@@ -5,7 +5,7 @@ console.log("[main] script executing");
 
 import { APPS } from "./apps/registry.js";
 import { createTerminal } from "./apps/terminal.js";
-import { renderResume, triggerPrint } from "./apps/resume.js";
+import { renderResume, triggerPrint, teardownPrintView } from "./apps/resume.js";
 import { renderProjects } from "./apps/projects.js";
 import { renderSkills } from "./apps/skills.js";
 import { renderAbout } from "./apps/about.js";
@@ -156,23 +156,23 @@ async function main() {
 
   // First-run: open the resume window so the page never lands empty.
   // (Comment this out if you want a clean desktop on first load.)
-  // Skipped in ?print=1 mode because the resume is already rendered as a
+  // Skipped in print/pdf modes because the resume is already rendered as a
   // full document by enterPrintMode().
   const params = new URLSearchParams(location.search);
-  const isPrintMode = params.get("print") === "1";
+  const isPrintMode = params.get("print") === "1" || params.get("pdf") === "1";
   if (!isPrintMode) {
     setTimeout(() => openApp(APPS[0], cv), 200);
   }
 
-  // ?print=1 — skip the desktop chrome and render the resume printably.
-  // This is the URL a recruiter can hit to get a clean printable view in
-  // their browser. They can still Cmd+P to save as PDF.
+  // ?print=1 or ?pdf=1 — skip the desktop chrome and render the resume as
+  // a clean full-page document (outside the window-layer so @media print
+  // rules can see it). ?pdf=1 additionally auto-triggers the print dialog.
   if (isPrintMode) {
     enterPrintMode(cv);
   }
   if (params.get("pdf") === "1") {
-    // /?pdf=1 — auto-trigger the print dialog after a short delay so the
-    // page can render fully first.
+    // Auto-trigger the print dialog after a short delay so the page can
+    // render fully first.
     setTimeout(() => triggerPrint(), 600);
   }
 
@@ -188,12 +188,13 @@ async function main() {
         openApp(APPS.find(a => a.id === "resume"), cv);
         setTimeout(() => triggerPrint(), 250);
       } else {
-        // Let the browser's native print dialog handle it — the print
-        // stylesheet will make the output look correct.
-        WM.focus("resume");
+        triggerPrint();
       }
     }
   });
+
+  // Restore the resume to its window after the print dialog closes.
+  window.addEventListener("afterprint", teardownPrintView);
 }
 
 function enterPrintMode(cv) {

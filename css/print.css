@@ -21,6 +21,12 @@
     display: none !important;
   }
 
+  /* Ctrl/Cmd+P from desktop: the resume was moved into #print-temp on
+     <body>. Show it and hide everything else. */
+  body.is-printing #print-temp {
+    display: block !important;
+  }
+
   /* Strip window chrome from any window that's open */
   .window {
     position: static !important;

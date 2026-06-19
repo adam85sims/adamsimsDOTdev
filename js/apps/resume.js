@@ -125,12 +125,47 @@ export function renderResume(cv) {
 
 // Trigger the browser print dialog. Called from the toolbar button, the
 // window-header action, or the Ctrl/Cmd+P shortcut.
+// Moves the resume out of the window-layer (which @media print hides) into
+// a temporary print container on <body>, then restores it after the dialog
+// closes. Skipped when ?print=1 or ?pdf=1 already rendered the resume
+// directly on <body> via enterPrintMode().
 export function triggerPrint() {
-  // Dispatch a custom event so other code (e.g. the window-header Print
-  // button on a different window) can react if needed.
+  if (!document.body.classList.contains("is-print-mode")) {
+    preparePrintView();
+  }
   document.dispatchEvent(new CustomEvent("cv:print"));
-  // Defer one frame so any event listeners run before the print dialog opens.
   requestAnimationFrame(() => window.print());
+}
+
+// Move the resume element from its window into a standalone print-page
+// container on <body> so @media print rules can render it (the
+// .window-layer parent is hidden by the print stylesheet).
+function preparePrintView() {
+  teardownPrintView();
+  const win = WM.get("resume");
+  if (!win) return;
+  const resumeEl = win.body.querySelector(".resume");
+  if (!resumeEl) return;
+  const printRoot = document.createElement("div");
+  printRoot.className = "print-page";
+  printRoot.id = "print-temp";
+  printRoot.style.display = "none";
+  printRoot.appendChild(resumeEl);
+  document.body.appendChild(printRoot);
+  document.body.classList.add("is-printing");
+}
+
+// Restore the resume to its window after the print dialog closes.
+export function teardownPrintView() {
+  document.body.classList.remove("is-printing");
+  const printRoot = document.getElementById("print-temp");
+  if (!printRoot) return;
+  const resumeEl = printRoot.querySelector(".resume");
+  const win = WM.get("resume");
+  if (resumeEl && win) {
+    win.body.prepend(resumeEl);
+  }
+  printRoot.remove();
 }
 
 function escape(s) {

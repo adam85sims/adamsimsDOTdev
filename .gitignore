@@ -1,0 +1,6 @@
+# Auto-generated bundles — CI rebuilds these on deploy
+js/bundle.js
+js/bundle.css
+
+# Local tooling state
+.brain/
