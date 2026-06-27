@@ -10,6 +10,7 @@ import { renderProjects } from "./apps/projects.js";
 import { renderSkills } from "./apps/skills.js";
 import { renderAbout } from "./apps/about.js";
 import { renderContact } from "./apps/contact.js";
+import { renderResearch } from "./apps/research.js";
 
 const BOOT_LINES = [
   "[ OK ]  started adam desktop session",

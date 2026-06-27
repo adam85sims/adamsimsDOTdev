@@ -8,7 +8,7 @@ cd "$(dirname "$0")/.."
 
 JS_OUT="js/bundle.js"
 CSS_OUT="js/bundle.css"
-JS_SOURCES=(wm.js apps/registry.js apps/resume.js apps/projects.js apps/skills.js apps/about.js apps/contact.js apps/terminal.js main.js)
+JS_SOURCES=(wm.js apps/registry.js apps/resume.js apps/projects.js apps/skills.js apps/about.js apps/contact.js apps/terminal.js apps/research.js main.js)
 CSS_SOURCES=(yaru.css desktop.css windows.css apps.css print.css responsive.css)
 
 # --- JS bundle ---

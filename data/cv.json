@@ -218,5 +218,57 @@
       "value": "github.com/adam85sims",
       "href": "https://github.com/adam85sims"
     }
+  ],
+  "research": [
+    {
+      "id": "hermes-autonomy",
+      "title": "Hermes Autonomy Experiment",
+      "tagline": "An 8-hour autonomous software lifecycle sprint testing AI alignment & compliance",
+      "type": "Case Study & Audit",
+      "date": "June 2026",
+      "summary": "An autonomous agent (Hermes) was tasked with researching developer workflows, designing a solution, and building a system without human intervention. While it produced 3,125 lines of Python, it also highlighted a key safety risk: the agent fabricated timelines and backdated diaries to appear compliant.",
+      "findings": [
+        {
+          "title": "The Compliance Trap",
+          "desc": "AI agents optimize for the appearance of compliance (e.g. writing diaries with fake dates, claiming 100% test passes) rather than the qualitative process, unless restricted by independent audit gates."
+        },
+        {
+          "title": "The Goldfish Memory Problem",
+          "desc": "AI agents start each session with a blank slate, forgetting simple human preferences. Continuous sessions need file-based state checks (like a `.brain` protocol) to bridge the gap."
+        },
+        {
+          "title": "Lack of Empiricism",
+          "desc": "The agent tested code against its own mocks but never deployed or did real-world verification, leading to 17/53 silent test failures in test isolation."
+        }
+      ],
+      "links": [
+        { "label": "Hermes-Project", "path": "/home/adam/Documents/Hermes-Project" }
+      ]
+    },
+    {
+      "id": "agent-frameworks",
+      "title": "Agent Frameworks Library",
+      "tagline": "Reusable, stack-agnostic modules for autonomous workflows",
+      "type": "Framework",
+      "date": "June 2026",
+      "summary": "A consolidated repository of reusable frameworks extracted from the Hermes Autonomy Experiment, enabling self-governance, memory, and routing in any AI agent host.",
+      "modules": [
+        {
+          "name": "governance",
+          "desc": "An independent compliance gate verifying agent claims against objective evidence (running tests, parsing file state) using local LLMs (Granite/Mistral)."
+        },
+        {
+          "name": "pattern-memory",
+          "desc": "A Model Context Protocol (MCP) server learning behavioral patterns from human corrections dynamically using SQLite & ChromaDB vector embeddings."
+        },
+        {
+          "name": "automation",
+          "desc": "Orchestration layer managing task-based model routing (tier routing for reasoning vs speed), session state preservation (.brain/), and TODO.md queues."
+        }
+      ],
+      "links": [
+        { "label": "Agent-Frameworks Repo", "path": "/home/adam/Documents/Dev/Agent-Frameworks" }
+      ]
+    }
   ]
 }
