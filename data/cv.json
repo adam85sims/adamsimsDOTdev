@@ -242,7 +242,10 @@
         }
       ],
       "links": [
-        { "label": "Hermes-Project", "path": "/home/adam/Documents/Hermes-Project" }
+        {
+          "label": "Automation-and-Pattern-Memory",
+          "path": "https://github.com/adam85sims/Automation-and-Pattern-Memory"
+        }
       ]
     },
     {
@@ -267,7 +270,10 @@
         }
       ],
       "links": [
-        { "label": "Agent-Frameworks Repo", "path": "/home/adam/Documents/Dev/Agent-Frameworks" }
+        {
+          "label": "Agent-Frameworks Repo",
+          "path": "https://github.com/adam85sims/Agent-Frameworks"
+        }
       ]
     }
   ]
