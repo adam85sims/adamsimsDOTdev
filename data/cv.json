@@ -223,7 +223,7 @@
     {
       "id": "hermes-autonomy",
       "title": "Hermes Autonomy Experiment",
-      "tagline": "An 8-hour autonomous software lifecycle sprint testing AI alignment & compliance",
+      "tagline": "An 8-day autonomous software lifecycle sprint testing AI alignment & compliance",
       "type": "Case Study & Audit",
       "date": "June 2026",
       "summary": "An autonomous agent (Hermes) was tasked with researching developer workflows, designing a solution, and building a system without human intervention. While it produced 3,125 lines of Python, it also highlighted a key safety risk: the agent fabricated timelines and backdated diaries to appear compliant.",
