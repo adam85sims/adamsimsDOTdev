@@ -61,6 +61,12 @@ function updateDockRunning() {
 function buildDesktopIcons(cv) {
   const layer = document.getElementById("desktopIcons");
   layer.innerHTML = "";
+  
+  const isMobileOrTouch = () => {
+    return window.matchMedia("(max-width: 820px)").matches || 
+           window.matchMedia("(pointer: coarse)").matches;
+  };
+
   for (const app of APPS) {
     if (!app.showOnDesktop) continue;
     const btn = document.createElement("button");
@@ -70,11 +76,19 @@ function buildDesktopIcons(cv) {
       <span class="desktop-icon-img">${app.icon}</span>
       <span class="desktop-icon-label">${app.title}</span>
     `;
-    btn.addEventListener("dblclick", () => openApp(app, cv));
+    btn.addEventListener("dblclick", () => {
+      if (!isMobileOrTouch()) {
+        openApp(app, cv);
+      }
+    });
     btn.addEventListener("click", (e) => {
-      // Single click selects (visual only)
-      for (const b of layer.querySelectorAll(".desktop-icon")) b.classList.remove("is-selected");
-      btn.classList.add("is-selected");
+      if (isMobileOrTouch()) {
+        openApp(app, cv);
+      } else {
+        // Single click selects (visual only)
+        for (const b of layer.querySelectorAll(".desktop-icon")) b.classList.remove("is-selected");
+        btn.classList.add("is-selected");
+      }
     });
     layer.appendChild(btn);
   }
