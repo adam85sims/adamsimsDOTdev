@@ -202,6 +202,94 @@
     "Moving to Shimonoseki, learning Japanese, eating fugu (responsibly)",
     "Long-form writing, worldbuilding, and the craft of pacing"
   ],
+  "services": [
+    {
+      "id": "agent-engineering",
+      "tier": 1,
+      "name": "Agent Engineering",
+      "tagline": "Custom AI agents and agentic workflows that actually work in production.",
+      "icon": "🤖",
+      "items": [
+        "Custom Agent Development",
+        "MCP Server Authoring",
+        "Multi-Agent Orchestration",
+        "Skills & Plugin Architectures",
+        "LLM Routing & Cost Optimisation"
+      ],
+      "proof": "Hermes Agent daily driver, Agent-Frameworks governance library, Headroom routing proxy.",
+      "pricing": {
+        "model": "Fixed project",
+        "gbp": "£3,000 — £25,000",
+        "usd": "$3,800 — $32,000"
+      }
+    },
+    {
+      "id": "ai-governance",
+      "tier": 2,
+      "name": "AI Governance & Safety",
+      "tagline": "The thing most consultancies skip. The thing that actually matters.",
+      "icon": "🛡️",
+      "items": [
+        "Agent Guardrail Design",
+        "Compliance Gate Architecture",
+        "Risk Frameworks for AI Systems",
+        "AI Policy & Documentation",
+        "Bias & Alignment Auditing"
+      ],
+      "proof": "5 years in UK regulated public service + caught my own agent fabricating compliance in the Hermes Autonomy Experiment.",
+      "pricing": {
+        "model": "Monthly retainer",
+        "gbp": "£2,000 — £5,000/mo",
+        "usd": "$2,500 — $6,300/mo"
+      }
+    },
+    {
+      "id": "app-development",
+      "tier": 3,
+      "name": "Application & Tool Development",
+      "tagline": "Full-stack product development for creative and technical tools.",
+      "icon": "⚡",
+      "items": [
+        "Desktop Applications (Electron/Tauri)",
+        "Web Applications",
+        "Creative Tools & Editors",
+        "Developer Tooling (CLI, TUI, extensions)",
+        "Game Engines & Narrative Systems"
+      ],
+      "proof": "NX-Writer (shipped product, real revenue), Phaser-NGE (257 tests, custom scene editor).",
+      "pricing": {
+        "model": "Fixed project",
+        "gbp": "£5,000 — £30,000",
+        "usd": "$6,300 — $38,000"
+      }
+    },
+    {
+      "id": "consulting",
+      "tier": 4,
+      "name": "Consulting & Strategy",
+      "tagline": "For the team that needs a brain, not a body.",
+      "icon": "🧠",
+      "items": [
+        "AI Architecture Review",
+        "Stack Selection & Roadmapping",
+        "AI Integration Strategy",
+        "Technical Due Diligence",
+        "Fractional AI Leadership"
+      ],
+      "proof": "Shipped products + governed risk + built agents. The rare combo of 'can ship' and 'can audit'.",
+      "pricing": {
+        "model": "Day rate",
+        "gbp": "£800 — £1,200/day",
+        "usd": "$1,000 — $1,500/day"
+      }
+    }
+  ],
+  "payment": {
+    "methods": ["Bank transfer", "Revolut", "PayPal", "Wise", "Stripe"],
+    "currencies": ["GBP", "USD", "EUR", "JPY"],
+    "terms": "50% upfront on fixed projects. Net 14 on retainers.",
+    "note": "Revolut for multi-currency — no transfer fees between accounts."
+  },
   "links": [
     {
       "label": "Email",

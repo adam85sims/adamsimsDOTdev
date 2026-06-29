@@ -1,6 +1,7 @@
 // App registry: each app exports { id, label, icon, defaultSize, render, onOpen }.
 // main.js calls this and wires windows, dock, desktop icons.
 
+import { renderServices } from "./apps/services.js";
 import { renderResume, triggerPrint } from "./apps/resume.js";
 import { renderProjects } from "./apps/projects.js";
 import { renderSkills } from "./apps/skills.js";
@@ -17,6 +18,7 @@ const ICONS = {
   contact: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6l9 7 9-7"/><rect x="3" y="5" width="18" height="14" rx="2"/></svg>',
   terminal: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="6,10 10,12 6,14"/><line x1="13" y1="15" x2="18" y2="15"/></svg>',
   research: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>',
+  services: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/><circle cx="12" cy="12" r="3"/></svg>',
   print: '<svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 5V2h8v3"/><rect x="2" y="5" width="12" height="8" rx="1"/><rect x="4" y="9" width="8" height="5"/></svg>',
 };
 
@@ -30,6 +32,7 @@ const PRINT_ACTION = {
 };
 
 export const APPS = [
+  { id: "services", title: "Services", icon: ICONS.services, defaultSize: { w: 900, h: 740 }, onOpen: (cv) => renderServices(cv), showOnDesktop: true, showInDock: true },
   {
     id: "resume",
     title: "Resume",
