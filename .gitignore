@@ -4,3 +4,9 @@ js/bundle.css
 
 # Local tooling state
 .brain/
+
+#private
+*.csv
+PROSPECTING_PLAN.md
+agentic-engineering-plan.md
+agentic-engineering-plan.md
