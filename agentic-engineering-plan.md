@@ -304,8 +304,213 @@ Step 6: DELIVER & HANDOFF
 
 ---
 
-## Day 3 — Wednesday 2026-07-01: Pricing
-*(TBD)*
+## Day 3 — Wednesday 2026-07-01: Pricing Deep-Dive
+### Rate Cards, Package Tiers, Deposit Structures
+
+---
+
+#### The Pricing Philosophy (Refined)
+
+Adam's business plan says "no hourly rates published." That's correct for clients — but Adam needs an **internal hourly anchor** to price fixed-scope work and sanity-check quotes.
+
+**Internal hourly rate: £150/hr** (target effective rate after admin, sales time, gaps between projects)
+
+Why £150/hr?
+- Sits at the **mid-range** of UK freelance AI (£80-200/hr from nicolalazzari.ai benchmarks)
+- Below agency rates (£1,000-1,800/day = £125-225/hr) — competitive
+- Above commodity freelance (£50-80/hr) — signals quality, not desperation
+- At 4 billable hours/day average, 220 working days/year = **£132k/year gross** at full capacity
+- Realistic: first year will be ~50% billable (rest is sales, admin, marketing) = ~£66k
+- Aligns with Q4 target of £60k revenue run-rate
+
+**Rule:** Every fixed-price quote should be backed by an estimated hours × £150 calculation. If the effective rate drops below £120/hr, the scope is wrong or the price is too low.
+
+---
+
+#### The Rate Card (What Clients See)
+
+Adam doesn't publish hourly rates. Instead, clients see **package prices** and **day rates**. Here's the definitive card:
+
+##### Fixed-Scope Packages (Tiers 1 & 3)
+
+| Package | What Ships | Duration | Price (GBP) | Effective £/hr |
+|---------|-----------|----------|-------------|----------------|
+| **MCP Server** | Custom MCP server, tool registration, docs, deploy config | 1-2 weeks | **£4,000** | ~£150-200 |
+| **Single Agent** | End-to-end agent: prompts, tools, error handling, deployment | 2-4 weeks | **£8,000** | ~£150-175 |
+| **Multi-Agent System** | Delegation trees, state isolation, test suite, docs | 4-8 weeks | **£18,000** | ~£150-170 |
+| **LLM Routing Layer** | Provider failover, caching, spend dashboard | 2-3 weeks | **£6,000** | ~£150-170 |
+| **Skills Architecture** | Composable, versioned, discoverable skill system | 3-5 weeks | **£10,000** | ~£150-165 |
+| **Desktop App** | Electron/Tauri app, persistence, packaging, auto-update | 4-8 weeks | **£16,000** | ~£150-170 |
+| **Web App** | Full-stack application, whatever stack fits | 3-6 weeks | **£12,000** | ~£150-175 |
+| **Creative Tool** | Editor, engine, asset pipeline, visual novel system | 4-10 weeks | **£18,000** | ~£150-170 |
+| **Dev Tooling** | CLI, TUI, VS Code extension, build scripts | 1-4 weeks | **£5,000** | ~£140-175 |
+| **Game Dev** | Phaser 3, narrative engines, Ink integration | 4-12 weeks | **£18,000** | ~£150-165 |
+
+**Note:** These are *anchor prices* for the "Standard" tier (see below). Actual quotes may go up or down based on complexity.
+
+##### Governance Packages (Tier 2)
+
+| Package | What Ships | Duration | Price (GBP) |
+|---------|-----------|----------|-------------|
+| **Governance Audit** | Full review + written report with prioritised findings | 1-2 weeks | **£4,500** |
+| **Compliance Gate Build** | Independent verification system (the thing that caught Hermes) | 3-5 weeks | **£12,000** |
+| **Governance Retainer** | Monthly: guardrails, policy updates, incident response, quarterly report | Ongoing | **£3,500/mo** |
+| **Risk Framework** | Risk register, control matrix, incident playbook | 2-3 weeks | **£6,000** |
+| **AI Policy Package** | Usage policies, escalation procedures, stakeholder docs | 1-2 weeks | **£3,000** |
+
+##### Consulting (Tier 4)
+
+| Package | What Ships | Duration | Price (GBP) |
+|---------|-----------|----------|-------------|
+| **Half-Day Consult** | 4hrs focused session + written summary | Half day | **£600** |
+| **Full-Day Consult** | 8hrs deep dive + written report | 1 day | **£1,000** |
+| **Architecture Review** | Full audit + findings report | 1-2 days | **£1,500** |
+| **Stack Selection Sprint** | "Should we use X or build custom?" + recommendation | 1 day | **£1,000** |
+| **AI Integration Strategy** | Where AI fits in your product + roadmap | 2-3 days | **£2,500** |
+| **Technical Due Diligence** | Investor/acquirer assessment of AI product | 2-5 days | **£3,500** |
+| **Fractional AI Leadership** | Weekly syncs, async advisory, architecture decisions | Ongoing | **£4,000/mo** |
+
+---
+
+#### The Three-Tier System (Per Package)
+
+Every fixed-scope package comes in three flavours. This is how Adam gives clients choice without scope creep:
+
+| Tier | Name | What's Included | Multiplier | Example: Single Agent |
+|------|------|----------------|------------|----------------------|
+| 🟢 | **Quick Start** | Core deliverable, README, basic deployment config | 1.0× | £8,000 |
+| 🔵 | **Standard** | + test suite, CI/CD config, 2 revision rounds, 14-day bug fixes | 1.25× | £10,000 |
+| 🟣 | **Full Handoff** | + architecture docs, runbook, video walkthrough, 30-day support, training session | 1.5× | £12,000 |
+
+**Why three tiers:**
+- **Quick Start** captures budget-conscious clients who just need the thing built
+- **Standard** is the recommended default (most clients pick this)
+- **Full Handoff** is for teams who want to own and maintain it themselves (build-and-handoff model)
+- Clients self-select → less negotiation, clearer expectations
+
+---
+
+#### Deposit & Payment Structure
+
+##### Fixed-Scope Projects (Tiers 1 & 3)
+
+```
+50% deposit ──→ Work begins ──→ Milestone check ──→ 50% on delivery
+(non-refundable)                   (optional for >4wk projects)
+```
+
+**Milestone structure for projects >4 weeks:**
+- 33% deposit on signing
+- 33% at midpoint (milestone deliverable reviewed)
+- 34% on final delivery
+
+**Why 50% deposit:**
+- Filters out tyre-kickers (they won't pay half upfront)
+- Covers Adam's initial time investment (the first 1-2 weeks are heaviest)
+- Industry standard for freelance/consultancy
+- Non-refundable — covers work completed if client cancels
+
+##### Retainers (Tiers 2 & 4)
+
+```
+First month ──→ Monthly on 1st ──→ 30-day notice to cancel
+(upfront)         (Net 14)
+```
+
+- First month paid in full before work starts
+- Subsequent months invoiced on the 1st, Net 14
+- 30-day written notice to cancel
+- Unused hours don't roll over (they were reserved, not purchased)
+
+##### Day Rate Consulting (Tier 4)
+
+```
+Invoice on completion ──→ Net 14
+(or upfront for first-time clients)
+```
+
+- For repeat clients: invoice after the session, Net 14
+- For new clients: payment before the session
+- Multi-day engagements: 50% deposit on booking
+
+---
+
+#### Discounts & Special Rates (Limited, Strategic)
+
+| Scenario | Discount | Why | Cap |
+|----------|----------|-----|-----|
+| **Multi-package bundle** | 10% off total | Client buying Agent + Governance together = higher LTV | Must be scoped as single SOW |
+| **Startup discount** | 15% off | Pre-Series A startups with confirmed funding | Only on Tier 1, max 1 per quarter |
+| **Repeat client** | 5% loyalty | Returning client within 12 months | Applied automatically |
+| **OSS contributor** | Case-by-case | Companies whose OSS Adam uses/benefits from | 1-2 per year max |
+| **Referral bonus** | £500 credit | Existing client refers a new paying client | Credited after new client pays deposit |
+
+**NOT discounted:**
+- Governance work (Tier 2) — never discount safety
+- Rush jobs — charge a **25% rush premium** instead
+- Scope creep — that's a change order, not a discount opportunity
+
+---
+
+#### Rush & Overtime Pricing
+
+| Situation | Premium | How It Works |
+|-----------|---------|--------------|
+| **Rush delivery** (<50% of normal timeline) | +25% | Client pays premium for compressed schedule |
+| **Weekend/bank holiday work** | +50% | Only if client explicitly requests it |
+| **Scope expansion** mid-project | Day rate (£1,000/day) | New scope = new line item, priced at day rate |
+| **Post-delivery support** beyond included period | £150/hr or retainer | 14-day bug fix window expires → hourly or retainer |
+
+---
+
+#### Payment Methods & Invoicing
+
+| Method | Currencies | Notes |
+|--------|-----------|-------|
+| **Bank transfer** | GBP, USD, EUR, JPY | Primary. No fees for UK transfers. |
+| **Revolut** | All major currencies | Multi-currency accounts. No FX fees between Revolut users. Best for international clients. |
+| **Wise** | All major currencies | Good FX rates. For clients who don't have Revolut. |
+| **PayPal** | All | Last resort — 3.5% fee absorbed by client or added to invoice. |
+
+**Invoicing:** Stripe for card payments (if client insists), otherwise direct invoice with bank details. Every invoice includes: SOW reference, itemised deliverables, payment terms, due date.
+
+---
+
+#### What The Numbers Mean (Revenue Scenarios)
+
+##### Conservative (Year 1, 50% utilisation)
+
+| Quarter | Work | Revenue |
+|---------|------|---------|
+| Q1 (Jul-Sep) | 2 × Single Agent (£8k) + 1 × Half-Day Consult (£600) | **£16,600** |
+| Q2 (Oct-Dec) | 1 × Multi-Agent (£18k) + 2 × Architecture Review (£1.5k) | **£21,000** |
+| Q3 (Jan-Mar) | 1 × Compliance Gate (£12k) + 1 × Governance Retainer (£3.5k × 3) | **£22,500** |
+| Q4 (Apr-Jun) | 1 × Creative Tool (£18k) + 1 × Retainer (£3.5k × 3) | **£28,500** |
+| **Total Year 1** | | **£88,600** |
+
+This exceeds the £60k Q4 run-rate target. Even at 40% utilisation, Year 1 hits ~£70k.
+
+##### Optimistic (Year 1, 65% utilisation)
+
+| Scenario | Revenue |
+|----------|---------|
+| 4 × Tier 1 builds (avg £12k) | £48,000 |
+| 6 months governance retainer (1 client) | £21,000 |
+| 3 × Tier 3 builds (avg £15k) | £45,000 |
+| 10 × Tier 4 consulting days | £10,000 |
+| **Total** | **£124,000** |
+
+---
+
+#### Pricing Decisions Still To Make
+
+1. **Publish prices on the site?** Lean **yes** for Tier 4 (day rates) and popular Tier 1 packages. It filters. Keep Tier 2/3 "enquire for quote" — they're scope-dependent.
+2. **Currency display?** Lead with GBP. Show USD equivalent. Add JPY from Sep 2026.
+3. **Retainer hours cap?** Governance retainer at £3,500/mo — how many hours? Recommend 15hrs/mo (effective £233/hr). Over that → day rate.
+4. **Startup discount verification?** Just ask for proof of funding stage? Or trust-based?
+5. **Minimum engagement?** Still £2,000? Or raise to £3,000 given the rate card?
+
+---
 
 ## Day 4 — Thursday 2026-07-02: Positioning & Copy
 *(TBD)*
@@ -315,4 +520,4 @@ Step 6: DELIVER & HANDOFF
 
 ---
 
-*Last updated: 2026-06-30 10:00 BST*
+*Last updated: 2026-07-01 10:00 BST*
