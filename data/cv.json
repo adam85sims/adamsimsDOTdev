@@ -3,7 +3,7 @@
     "name": "Adam Sims",
     "title": "Agentic AI Engineer · AI Platform Engineer",
     "location": "Shimonoseki, Japan (from Sep 2026) · UK Remote (now)",
-    "email": "adam@adamsims.dev,
+    "email": "adam@adamsims.dev",
     "tagline": "I build tools that ship. Currently living in a terminal, building agents that actually finish the job.",
     "status": "Available for remote contracts · open to AI Platform / Agentic Engineering roles",
     "languages": [
@@ -285,8 +285,19 @@
     }
   ],
   "payment": {
-    "methods": ["Bank transfer", "Revolut", "PayPal", "Wise", "Stripe"],
-    "currencies": ["GBP", "USD", "EUR", "JPY"],
+    "methods": [
+      "Bank transfer",
+      "Revolut",
+      "PayPal",
+      "Wise",
+      "Stripe"
+    ],
+    "currencies": [
+      "GBP",
+      "USD",
+      "EUR",
+      "JPY"
+    ],
     "terms": "50% upfront on fixed projects. Net 14 on retainers.",
     "note": "Revolut for multi-currency — no transfer fees between accounts."
   },
