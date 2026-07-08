@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Custom Adapters — Sentinel</title>
+    <meta name="description" content="Write Sentinel adapters for any agent framework using the hook-based adapter protocol.">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23E95420'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='18' font-family='monospace'>S</text></svg>">
     <link rel="stylesheet" href="../css/docs.css">
 </head>
@@ -12,7 +13,10 @@
 <header class="header">
     <button class="mobile-toggle" aria-label="Menu">☰</button>
     <a href="/" class="header-brand">
-        <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="6" fill="#E95420"/><path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="6" fill="#E95420"/>
+            <path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
         <h1>Sentinel</h1>
     </a>
     <nav class="header-nav">
@@ -52,7 +56,7 @@
                 <a href="adapters-langchain.html" class="nav-link">LangChain</a>
                 <a href="adapters-crewai.html" class="nav-link">CrewAI</a>
                 <a href="adapters-openai.html" class="nav-link">OpenAI SDK</a>
-                <a href="adapters-custom.html" class="nav-link">Custom Adapters</a>
+                <a href="adapters-custom.html" class="nav-link active">Custom Adapters</a>
             </div>
             <div class="nav-group">
                 <div class="nav-group-title">Advanced</div>
@@ -73,13 +77,245 @@
     <main class="main">
         <div class="page-header">
             <h1>Custom Adapters</h1>
-            <p class="subtitle">Write adapters for any agent framework.</p>
+            <p class="subtitle">Write adapters for any agent framework using the hook-based protocol.</p>
         </div>
 
         <div class="content">
+
+            <h2>The Adapter Protocol</h2>
+            <p>Sentinel's generic adapter (<code>HookAdapter</code>) works with any agent framework — no framework dependencies required. It follows a simple protocol:</p>
+
+            <ol>
+                <li><strong>Accept a <code>MockTool</code></strong> — provides canned responses instead of real execution.</li>
+                <li><strong>Accept an <code>AgentTrace</code></strong> — records every call for behavioral assertions.</li>
+                <li><strong>Expose <code>invoke()</code> / <code>__call__()</code></strong> — the tool invocation interface your agent calls.</li>
+                <li><strong>Record calls</strong> — every invocation is captured as a <code>ToolCall</code> in the trace with arguments, result, duration, and errors.</li>
+            </ol>
+
+            <p>Framework-specific adapters (LangChain, CrewAI, OpenAI SDK) add an extra layer that matches each framework's tool protocol, but the core is always the same: mock the tool, record the call.</p>
+
+            <h2>HookAdapter</h2>
+            <p>The framework-agnostic adapter. <code>HookAdapter</code> wraps any callable with sentinel tracing:</p>
+
+            <pre><code>from sentinel.adapters.generic import HookAdapter
+from sentinel.env import MockTool
+from sentinel.models import AgentTrace
+
+trace = AgentTrace()
+
+# Create a hook adapter with a mock tool
+adapter = HookAdapter(
+    mock=MockTool("search", response={"results": ["doc1"]}),
+    trace=trace,
+    name="search",
+    description="Search the knowledge base",
+)
+
+# Execute it
+result = adapter.execute(query="refund policy")
+print(f"Result: {result}")
+print(f"Trace calls: {trace.total_tool_calls}")
+
+# Or call directly
+result = adapter(query="return policy")</code></pre>
+
+            <h3>Parameters</h3>
+            <ul>
+                <li><code>mock</code> — (Optional) A <code>MockTool</code> for canned responses. If <code>None</code>, requires <code>fn</code>.</li>
+                <li><code>trace</code> — An <code>AgentTrace</code> to record all calls into.</li>
+                <li><code>name</code> — (Optional) Tool name. Defaults to <code>mock.name</code> or the function name.</li>
+                <li><code>description</code> — (Optional) Tool description.</li>
+                <li><code>fn</code> — (Optional) The original function to wrap. When <code>mock</code> is <code>None</code>, this function is called directly.</li>
+            </ul>
+
+            <div class="callout callout-warning">
+                <strong>⚠️ One is required</strong>
+                You must provide either <code>mock</code> or <code>fn</code> — otherwise the adapter raises <code>ValueError</code>.
+            </div>
+
+            <h2>add_before_hook / add_after_hook</h2>
+            <p>Before-hooks and after-hooks let you transform arguments and results without modifying the tool or the mock:</p>
+
+            <pre><code>adapter = HookAdapter(
+    mock=MockTool("search", response={"results": ["doc1"]}),
+    trace=trace,
+    name="search",
+)
+
+# Before-hook: transform kwargs before execution
+# Receives kwargs dict, returns (possibly modified) kwargs dict
+adapter.add_before_hook(
+    lambda kwargs: {**kwargs, "limit": 10}
+)
+
+# After-hook: transform result after execution
+# Receives (result, kwargs), returns (possibly modified) result
+adapter.add_after_hook(
+    lambda result, kwargs: result[:5]  # truncate results
+)
+
+# Error-hook: notified on exception (side-effect only)
+# Receives (exception, kwargs), returns None
+adapter.add_error_hook(
+    lambda exc, kwargs: print(f"Error: {exc}")
+)
+
+# Execute — hooks run in registration order
+result = adapter.execute(query="test")</code></pre>
+
+            <h3>Hook Execution Order</h3>
+            <ol>
+                <li><strong>Before-hooks</strong> — each receives the output of the previous one. Chain: <code>kwargs₁ → kwargs₂ → kwargs₃</code>.</li>
+                <li><strong>Tool execution</strong> — the mock (or original function) runs with the final kwargs.</li>
+                <li><strong>After-hooks</strong> — each receives the output of the previous one. Chain: <code>result₁ → result₂ → result₃</code>.</li>
+                <li><strong>Error-hooks</strong> — called only on exception. Side-effect only (logging, metrics). Does not modify the exception.</li>
+            </ol>
+
+            <h2>The @wrap_callable Decorator</h2>
+            <p>A convenient decorator that replaces a function with a <code>HookAdapter</code>:</p>
+
+            <pre><code>from sentinel.adapters.generic import wrap_callable
+from sentinel.env import MockTool
+from sentinel.models import AgentTrace
+
+trace = AgentTrace()
+search_mock = MockTool("search", response={"results": ["doc1"]})
+
+@wrap_callable(mock=search_mock, trace=trace)
+def search(**kwargs):
+    """Search the knowledge base."""
+    return real_search_impl(**kwargs)
+
+# search is now a HookAdapter — call it like a function
+result = search(query="test")
+
+# The original function is preserved
+print(search._original_fn)  # &lt;function search at 0x...&gt;
+
+# Configure hooks on the adapter
+adapter = search  # It IS the adapter
+adapter.add_before_hook(lambda kwargs: {**kwargs, "limit": 10})</code></pre>
+
+            <h2>HookAdapterGroup</h2>
+            <p>Manage multiple adapters as a logical unit. Useful for wrapping many tools and applying hooks uniformly:</p>
+
+            <pre><code>from sentinel.adapters.generic import HookAdapterGroup
+from sentinel.env import MockTool
+from sentinel.models import AgentTrace
+
+trace = AgentTrace()
+group = HookAdapterGroup(trace=trace)
+
+# Add tools to the group
+group.add(mock=MockTool("search", response={"results": []}))
+group.add(mock=MockTool("email", response="sent"))
+group.add(mock=MockTool("database", response={"rows": 0}))
+
+# Apply hooks to ALL adapters at once
+group.apply_before_hook_to_all(
+    lambda kwargs: {**kwargs, "timeout": 30}
+)
+
+# Access individual adapters
+search = group.get("search")
+result = search.execute(query="test")</code></pre>
+
+            <h2>Integration Checklist</h2>
+            <p>When building a custom adapter for a new framework:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Step</th>
+                        <th>What to do</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1. Identify the tool protocol</td>
+                        <td>How does your framework invoke tools? (e.g., <code>.invoke()</code>, <code>.run()</code>, <code>__call__()</code>)</td>
+                    </tr>
+                    <tr>
+                        <td>2. Create the adapter class</td>
+                        <td>Accept a <code>MockTool</code> and <code>AgentTrace</code>. Implement the invocation method to delegate to the mock and record into the trace.</td>
+                    </tr>
+                    <tr>
+                        <td>3. Match the tool signature</td>
+                        <td>Your adapter must accept the same arguments the real tool does. Use the framework's schema if available.</td>
+                    </tr>
+                    <tr>
+                        <td>4. Wire into the agent</td>
+                        <td>Replace the agent's tools with your adapters before running.</td>
+                    </tr>
+                    <tr>
+                        <td>5. Assert on behavior</td>
+                        <td>Use <code>assert_tool_called()</code>, <code>assert_no_tool_errors()</code>, and trace inspection to verify behavior.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>How to Test Custom Adapters</h2>
+            <p>Test your adapter against the same criteria as the built-in ones:</p>
+
+            <pre><code>from sentinel.adapters.generic import HookAdapter
+from sentinel.env import MockTool
+from sentinel.models import AgentTrace
+from sentinel.assertions import assert_tool_called, assert_no_tool_errors
+
+def test_custom_adapter_basic():
+    """Adapter delegates to mock and records the call."""
+    trace = AgentTrace()
+    adapter = HookAdapter(
+        mock=MockTool("test_tool", response={"ok": True}),
+        trace=trace,
+    )
+    result = adapter.execute(input="hello")
+    assert result == {"ok": True}
+    assert_tool_called(trace, "test_tool")
+    assert_no_tool_errors(trace)
+
+def test_custom_adapter_error():
+    """Adapter records errors and raises."""
+    trace = AgentTrace()
+    adapter = HookAdapter(
+        mock=MockTool("fail_tool", error="Boom"),
+        trace=trace,
+    )
+    try:
+        adapter.execute()
+        assert False, "Should have raised"
+    except Exception:
+        pass
+    assert_tool_called(trace, "fail_tool")
+
+def test_custom_adapter_hooks():
+    """Before/after hooks transform args and results."""
+    trace = AgentTrace()
+    adapter = HookAdapter(
+        mock=MockTool("search", response=["a", "b", "c"]),
+        trace=trace,
+    )
+    adapter.add_before_hook(lambda kwargs: {**kwargs, "limit": 2})
+    adapter.add_after_hook(lambda result, kwargs: result[:2])
+
+    result = adapter.execute()
+    assert result == ["a", "b"]</code></pre>
+
             <div class="callout callout-info">
-                <strong>📖 Documentation in progress</strong>
-                This page is under construction. For now, check the <a href="quickstart.html">Quickstart</a> or <a href="https://github.com/adam85sims/Sentinel">GitHub README</a>.
+                <strong>📖 Reference implementations</strong>
+                See the source code for the built-in adapters: <code>src/sentinel/adapters/langchain.py</code>, <code>crewai.py</code>, <code>openai.py</code>, and <code>generic.py</code>. They all follow the same pattern: accept mock + trace, delegate execution, record calls.
+            </div>
+
+            <h2>Next Steps</h2>
+            <ul>
+                <li><a href="adapters-langchain.html">LangChain Adapter</a> — reference implementation for LangChain</li>
+                <li><a href="adapters-crewai.html">CrewAI Adapter</a> — reference implementation for CrewAI</li>
+                <li><a href="adapters-openai.html">OpenAI SDK Adapter</a> — reference implementation for OpenAI Agents SDK</li>
+                <li><a href="traces.html">Agent Traces</a> — what gets recorded and how to assert against it</li>
+            </ul>
+
+            <div style="margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); color: var(--fg-muted); font-size: 0.875rem;">
+                <p>Built by <a href="/">Adam Sims</a> · <a href="https://github.com/adam85sims/Sentinel">GitHub</a> · MIT License</p>
             </div>
         </div>
     </main>

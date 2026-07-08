@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chaos Presets — Sentinel</title>
+    <meta name="description" content="Ready-made chaos configurations for common production failure scenarios — production incidents, deploy Friday, traffic spikes, and more.">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23E95420'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='18' font-family='monospace'>S</text></svg>">
     <link rel="stylesheet" href="../css/docs.css">
 </head>
@@ -12,7 +13,10 @@
 <header class="header">
     <button class="mobile-toggle" aria-label="Menu">☰</button>
     <a href="/" class="header-brand">
-        <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="6" fill="#E95420"/><path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="6" fill="#E95420"/>
+            <path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
         <h1>Sentinel</h1>
     </a>
     <nav class="header-nav">
@@ -45,7 +49,7 @@
                 <a href="chaos-context.html" class="nav-link">Context Degradation</a>
                 <a href="chaos-network.html" class="nav-link">Network Partitions</a>
                 <a href="chaos-memory.html" class="nav-link">Memory Pressure</a>
-                <a href="chaos-presets.html" class="nav-link">Presets</a>
+                <a href="chaos-presets.html" class="nav-link active">Presets</a>
             </div>
             <div class="nav-group">
                 <div class="nav-group-title">Framework Adapters</div>
@@ -73,14 +77,520 @@
     <main class="main">
         <div class="page-header">
             <h1>Chaos Presets</h1>
-            <p class="subtitle">Ready-made chaos configurations for common scenarios.</p>
+            <p class="subtitle">Ready-made chaos configurations for common production failure scenarios.</p>
         </div>
 
         <div class="content">
+            <!-- Overview -->
+            <h2 id="overview">Overview</h2>
+            <p>Chaos presets are pre-configured lists of injectors that model real-world failure scenarios. Instead of manually combining injectors, you can import a preset and apply it to your test with a single line. Each preset is a <code>list</code> of injector instances ready to be added to a <code>ChaosBudget</code> or applied directly to tools.</p>
+
             <div class="callout callout-info">
-                <strong>📖 Documentation in progress</strong>
-                This page is under construction. For now, check the <a href="quickstart.html">Quickstart</a> or <a href="https://github.com/adam85sims/Sentinel">GitHub README</a>.
+                <strong>📖 Import path</strong>
+                <code>from sentinel.chaos_presets import PRODUCTION_INCIDENT, DEPLOY_FRIDAY, TRAFFIC_SPIKE</code>
             </div>
+
+            <p>Sentinel ships with <strong>7 presets</strong> covering the most common production failure scenarios. You can also use the <code>PRESETS</code> registry for lookup by name.</p>
+
+            <!-- Quick Usage -->
+            <h2 id="quick-usage">Quick Usage</h2>
+<pre><code>from sentinel.chaos_presets import PRODUCTION_INCIDENT
+from sentinel.chaos import ChaosBudget
+
+# Option 1: Apply presets directly to a budget
+chaos = ChaosBudget(max_failures=10)
+for injector in PRODUCTION_INCIDENT:
+    chaos.add(injector)
+
+# Option 2: Wrap individual tools
+from sentinel.env import MockTool
+
+db_tool = MockTool("database", response={"rows": 0})
+for injector in PRODUCTION_INCIDENT:
+    if hasattr(injector, 'wrap'):
+        injector.wrap(db_tool)
+
+# Option 3: Use the PRESETS registry
+from sentinel.chaos_presets import PRESETS
+
+preset = PRESETS["production_incident"]  # Same as PRODUCTION_INCIDENT</code></pre>
+
+            <!-- Preset: PRODUCTION_INCIDENT -->
+            <h2 id="production-incident">1. PRODUCTION_INCIDENT</h2>
+            <p><strong>Scenario:</strong> Database goes down, cascading to API and cache failures. The agent faces a multi-service outage with degraded context.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Injector</th>
+                        <th>Type</th>
+                        <th>Target</th>
+                        <th>Settings</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>ToolFailureInjector</code></td>
+                        <td><code>error</code></td>
+                        <td><code>database</code></td>
+                        <td>80% failure rate, seed=42</td>
+                    </tr>
+                    <tr>
+                        <td><code>ToolFailureInjector</code></td>
+                        <td><code>rate_limit</code></td>
+                        <td><code>api</code></td>
+                        <td>40% failure rate, seed=42</td>
+                    </tr>
+                    <tr>
+                        <td><code>ToolFailureInjector</code></td>
+                        <td><code>partial</code></td>
+                        <td><code>cache</code></td>
+                        <td>30% failure rate, seed=42</td>
+                    </tr>
+                    <tr>
+                        <td><code>ContextDegradation</code></td>
+                        <td><code>noise</code></td>
+                        <td>—</td>
+                        <td>20% degradation rate</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p><strong>What it tests:</strong> Does the agent recognize that the database is the root cause? Does it fall back to cache (which returns partial data)? Does it degrade gracefully as context fills with error messages?</p>
+
+            <pre><code>from sentinel.chaos_presets import PRODUCTION_INCIDENT
+
+chaos = ChaosBudget(max_failures=8)
+for injector in PRODUCTION_INCIDENT:
+    chaos.add(injector)
+
+# The agent should:
+# 1. Detect database failures
+# 2. Try alternative data sources
+# 3. Report the issue rather than silently failing</code></pre>
+
+            <!-- Preset: DEPLOY_FRIDAY -->
+            <h2 id="deploy-friday">2. DEPLOY_FRIDAY</h2>
+            <p><strong>Scenario:</strong> Friday deployment goes wrong. Deploy tool fails, health checks timeout, DNS intermittently fails, and error logs flood the context.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Injector</th>
+                        <th>Type</th>
+                        <th>Target</th>
+                        <th>Settings</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>ToolFailureInjector</code></td>
+                        <td><code>error</code></td>
+                        <td><code>deploy</code></td>
+                        <td>90% failure rate, seed=42</td>
+                    </tr>
+                    <tr>
+                        <td><code>ToolFailureInjector</code></td>
+                        <td><code>timeout</code></td>
+                        <td><code>health_check</code></td>
+                        <td>60% failure rate, seed=42</td>
+                    </tr>
+                    <tr>
+                        <td><code>ToolFailureInjector</code></td>
+                        <td><code>timeout</code></td>
+                        <td><code>dns</code></td>
+                        <td>30% failure rate, seed=42</td>
+                    </tr>
+                    <tr>
+                        <td><code>ContextDegradation</code></td>
+                        <td><code>noise</code></td>
+                        <td>—</td>
+                        <td>30% degradation rate</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p><strong>What it tests:</strong> Does the agent detect that a deployment is failing? Does it roll back or halt? Can it distinguish between deployment failures and normal errors?</p>
+
+            <!-- Preset: TRAFFIC_SPIKE -->
+            <h2 id="traffic-spike">3. TRAFFIC_SPIKE</h2>
+            <p><strong>Scenario:</strong> Traffic spike hits. Rate limits trigger across services, database times out under load, cascading failures propagate, and memory pressure builds.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Injector</th>
+                        <th>Type</th>
+                        <th>Target</th>
+                        <th>Settings</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>ToolFailureInjector</code></td>
+                        <td><code>rate_limit</code></td>
+                        <td><code>api</code></td>
+                        <td>50% failure rate, seed=42</td>
+                    </tr>
+                    <tr>
+                        <td><code>ToolFailureInjector</code></td>
+                        <td><code>rate_limit</code></td>
+                        <td><code>search</code></td>
+                        <td>40% failure rate, seed=42</td>
+                    </tr>
+                    <tr>
+                        <td><code>ToolFailureInjector</code></td>
+                        <td><code>timeout</code></td>
+                        <td><code>database</code></td>
+                        <td>30% failure rate, seed=42</td>
+                    </tr>
+                    <tr>
+                        <td><code>CascadingFailures</code></td>
+                        <td>—</td>
+                        <td>—</td>
+                        <td>60% cascade prob, max depth 2</td>
+                    </tr>
+                    <tr>
+                        <td><code>MemoryPressure</code></td>
+                        <td>—</td>
+                        <td>—</td>
+                        <td>8192 tokens, 70% threshold, FIFO eviction</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p><strong>What it tests:</strong> Does the agent implement backoff/retry? Does it handle rate limits gracefully? Can it survive cascading failures without crashing?</p>
+
+            <!-- Preset: NETWORK_PARTITION -->
+            <h2 id="network-partition-preset">4. NETWORK_PARTITION</h2>
+            <p><strong>Scenario:</strong> Partial connectivity — external services and webhooks are isolated, but internal services (API ↔ database ↔ cache) remain connected. Context degrades during the partition.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Injector</th>
+                        <th>Type</th>
+                        <th>Settings</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>NetworkPartition</code></td>
+                        <td>—</td>
+                        <td>API↔DB↔Cache connected; external_api and webhook isolated; 100% partition</td>
+                    </tr>
+                    <tr>
+                        <td><code>ContextDegradation</code></td>
+                        <td><code>truncation</code></td>
+                        <td>Default settings (10% rate)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p><strong>What it tests:</strong> Does the agent detect that external services are unreachable? Does it use cached data? Does it report the connectivity issue?</p>
+
+            <pre><code>from sentinel.chaos_presets import NETWORK_PARTITION
+
+chaos = ChaosBudget(max_failures=5)
+for injector in NETWORK_PARTITION:
+    chaos.add(injector)
+
+# The agent should:
+# 1. Detect external service isolation
+# 2. Fall back to internal services
+# 3. Not hang waiting for unreachable services</code></pre>
+
+            <!-- Preset: TIME_TRAVEL -->
+            <h2 id="time-travel">5. TIME_TRAVEL</h2>
+            <p><strong>Scenario:</strong> Clock skew between services. The auth service has a 5-minute clock skew, causing token validation failures and API errors.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Injector</th>
+                        <th>Type</th>
+                        <th>Target</th>
+                        <th>Settings</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>ClockSkew</code></td>
+                        <td>—</td>
+                        <td><code>auth</code>, <code>token_refresh</code></td>
+                        <td>-300s skew (5 minutes behind)</td>
+                    </tr>
+                    <tr>
+                        <td><code>ToolFailureInjector</code></td>
+                        <td><code>error</code></td>
+                        <td><code>api</code></td>
+                        <td>40% failure rate, custom "Token expired" message</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p><strong>What it tests:</strong> Does the agent detect stale tokens? Can it refresh authentication? Does it handle timestamp mismatches without infinite retry loops?</p>
+
+            <!-- Preset: MEMORY_LEAK -->
+            <h2 id="memory-leak">6. MEMORY_LEAK</h2>
+            <p><strong>Scenario:</strong> Progressive context exhaustion. The context window fills up, triggering GC pauses and OOM kills. Search tool starts timing out under pressure.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Injector</th>
+                        <th>Type</th>
+                        <th>Target</th>
+                        <th>Settings</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>MemoryPressure</code></td>
+                        <td>—</td>
+                        <td>—</td>
+                        <td>4096 tokens, 60% threshold, FIFO, 100ms GC, 10% OOM</td>
+                    </tr>
+                    <tr>
+                        <td><code>ToolFailureInjector</code></td>
+                        <td><code>timeout</code></td>
+                        <td><code>search</code></td>
+                        <td>20% failure rate, seed=42</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p><strong>What it tests:</strong> Does the agent handle context window exhaustion? Can it recover from an OOM kill (context reset to 0)? Does it prioritize keeping critical context?</p>
+
+            <pre><code>from sentinel.chaos_presets import MEMORY_LEAK
+
+chaos = ChaosBudget(max_failures=5)
+for injector in MEMORY_LEAK:
+    chaos.add(injector)
+
+# The agent should:
+# 1. Detect context pressure early
+# 2. Consolidate or summarize to free space
+# 3. Recover from OOM kills gracefully</code></pre>
+
+            <!-- Preset: COMPLETE_OUTAGE -->
+            <h2 id="complete-outage">7. COMPLETE_OUTAGE</h2>
+            <p><strong>Scenario:</strong> Everything is down. All tools fail at 100% probability, and full network isolation prevents any service communication.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Injector</th>
+                        <th>Type</th>
+                        <th>Target</th>
+                        <th>Settings</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>ToolFailureInjector</code></td>
+                        <td><code>error</code></td>
+                        <td><code>database</code></td>
+                        <td>100% failure rate</td>
+                    </tr>
+                    <tr>
+                        <td><code>ToolFailureInjector</code></td>
+                        <td><code>timeout</code></td>
+                        <td><code>api</code></td>
+                        <td>100% failure rate</td>
+                    </tr>
+                    <tr>
+                        <td><code>ToolFailureInjector</code></td>
+                        <td><code>error</code></td>
+                        <td><code>cache</code></td>
+                        <td>100% failure rate</td>
+                    </tr>
+                    <tr>
+                        <td><code>ToolFailureInjector</code></td>
+                        <td><code>timeout</code></td>
+                        <td><code>search</code></td>
+                        <td>100% failure rate</td>
+                    </tr>
+                    <tr>
+                        <td><code>NetworkPartition</code></td>
+                        <td>—</td>
+                        <td>—</td>
+                        <td>All services isolated, 100% partition</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p><strong>What it tests:</strong> The ultimate resilience test. The agent should recognize total failure, stop retrying, and report the outage clearly rather than entering an infinite retry loop or producing garbage output.</p>
+
+            <!-- Customizing Presets -->
+            <h2 id="customizing">Customizing Presets</h2>
+            <p>Presets are plain Python lists — you can modify them freely. Create a copy, add or remove injectors, or change parameters:</p>
+
+<pre><code>import copy
+from sentinel.chaos_presets import PRODUCTION_INCIDENT
+from sentinel.chaos import ToolFailureInjector, ChaosBudget
+
+# Make a custom version with stricter database failures
+custom_incident = copy.deepcopy(PRODUCTION_INCIDENT)
+
+# Find and modify the database injector
+for injector in custom_incident:
+    if (isinstance(injector, ToolFailureInjector) 
+            and injector.tool_name == "database"):
+        injector.probability = 1.0  # 100% failure (was 80%)
+        injector.failure_type = "timeout"  # Timeout instead of error
+
+# Add an extra injector
+custom_incident.append(ToolFailureInjector(
+    tool_name="search",
+    failure_type="rate_limit",
+    probability=0.5,
+    seed=42,
+))
+
+# Use it
+chaos = ChaosBudget(max_failures=10)
+for injector in custom_incident:
+    chaos.add(injector)</code></pre>
+
+            <!-- Creating Your Own -->
+            <h2 id="creating-presets">Creating Your Own Presets</h2>
+            <p>Presets are just lists of injectors. Create your own by following the same pattern:</p>
+
+<pre><code>from sentinel.chaos import (
+    ToolFailureInjector,
+    LLMFailureInjector,
+    ContextDegradation,
+    CascadingFailures,
+    NetworkPartition,
+    ClockSkew,
+    MemoryPressure,
+    ChaosBudget,
+)
+
+# Define a custom preset for "slow degradation" testing
+SLOW_DEGRADATION = [
+    # Gradual tool failures that increase over time
+    ToolFailureInjector(
+        tool_name="search",
+        failure_type="timeout",
+        probability=0.1,       # Low initial failure rate
+        after_step=5,          # Start failing after 5 calls
+        seed=42,
+    ),
+    # Context degrades slowly
+    ContextDegradation(
+        strategy="truncation",
+        start_step=3,
+        degradation_rate=0.05, # Very slow degradation
+    ),
+    # Memory pressure builds
+    MemoryPressure(
+        max_context_tokens=8192,
+        pressure_threshold=0.9,  # High threshold — late pressure
+        eviction_strategy="fifo",
+    ),
+]
+
+# Register it in the PRESETS registry
+from sentinel.chaos_presets import PRESETS
+PRESETS["slow_degradation"] = SLOW_DEGRADATION
+
+# Now you can use it by name
+chaos = ChaosBudget(max_failures=5)
+for injector in PRESETS["slow_degradation"]:
+    chaos.add(injector)</code></pre>
+
+            <div class="callout callout-info">
+                <strong>💡 Preset design tips</strong>
+                <ul>
+                    <li>Use <code>seed</code> on all injectors for reproducibility</li>
+                    <li>Start with low probabilities and increase gradually</li>
+                    <li>Combine tool failures with context degradation for realistic scenarios</li>
+                    <li>Include at least one <code>ToolFailureInjector</code> per critical service</li>
+                </ul>
+            </div>
+
+            <!-- Preset Registry -->
+            <h2 id="preset-registry">The <code>PRESETS</code> Registry</h2>
+            <p>All presets are available via the <code>PRESETS</code> dict for lookup by name:</p>
+
+<pre><code>from sentinel.chaos_presets import PRESETS
+
+# List all available presets
+print(list(PRESETS.keys()))
+# ['production_incident', 'deploy_friday', 'traffic_spike',
+#  'network_partition', 'time_travel', 'memory_leak', 'complete_outage']
+
+# Access by name
+preset = PRESETS["traffic_spike"]
+
+# Dynamic preset selection
+preset_name = os.environ.get("CHAOS_PRESET", "production_incident")
+chaos = ChaosBudget(max_failures=10)
+for injector in PRESETS[preset_name]:
+    chaos.add(injector)</code></pre>
+
+            <!-- Comparison Table -->
+            <h2 id="comparison">Preset Comparison</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Preset</th>
+                        <th>Injectors</th>
+                        <th>Primary Failure</th>
+                        <th>Best For</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>PRODUCTION_INCIDENT</code></td>
+                        <td>4</td>
+                        <td>Database + cascading</td>
+                        <td>Multi-service outage recovery</td>
+                    </tr>
+                    <tr>
+                        <td><code>DEPLOY_FRIDAY</code></td>
+                        <td>4</td>
+                        <td>Deploy + DNS failures</td>
+                        <td>Deployment failure detection</td>
+                    </tr>
+                    <tr>
+                        <td><code>TRAFFIC_SPIKE</code></td>
+                        <td>5</td>
+                        <td>Rate limits + cascading</td>
+                        <td>Backoff/retry behavior</td>
+                    </tr>
+                    <tr>
+                        <td><code>NETWORK_PARTITION</code></td>
+                        <td>2</td>
+                        <td>Service isolation</td>
+                        <td>Connectivity detection</td>
+                    </tr>
+                    <tr>
+                        <td><code>TIME_TRAVEL</code></td>
+                        <td>2</td>
+                        <td>Clock skew</td>
+                        <td>Auth/token handling</td>
+                    </tr>
+                    <tr>
+                        <td><code>MEMORY_LEAK</code></td>
+                        <td>2</td>
+                        <td>Context exhaustion</td>
+                        <td>OOM recovery</td>
+                    </tr>
+                    <tr>
+                        <td><code>COMPLETE_OUTAGE</code></td>
+                        <td>5</td>
+                        <td>Total failure</td>
+                        <td>Extreme resilience testing</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div style="margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); color: var(--fg-muted); font-size: 0.875rem;">
+            <p>Built by <a href="/">Adam Sims</a> · <a href="https://github.com/adam85sims/Sentinel">GitHub</a> · MIT License</p>
         </div>
     </main>
 </div>

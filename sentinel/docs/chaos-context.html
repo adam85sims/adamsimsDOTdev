@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Context Degradation — Sentinel</title>
+    <meta name="description" content="Deep dive on ContextDegradation — simulate context window erosion via truncation, noise injection, and instruction drift.">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23E95420'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='18' font-family='monospace'>S</text></svg>">
     <link rel="stylesheet" href="../css/docs.css">
 </head>
@@ -12,7 +13,10 @@
 <header class="header">
     <button class="mobile-toggle" aria-label="Menu">☰</button>
     <a href="/" class="header-brand">
-        <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="6" fill="#E95420"/><path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="6" fill="#E95420"/>
+            <path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
         <h1>Sentinel</h1>
     </a>
     <nav class="header-nav">
@@ -42,7 +46,7 @@
                 <div class="nav-group-title">Chaos Engineering</div>
                 <a href="chaos.html" class="nav-link">Overview</a>
                 <a href="chaos-tool-failures.html" class="nav-link">Tool Failures</a>
-                <a href="chaos-context.html" class="nav-link">Context Degradation</a>
+                <a href="chaos-context.html" class="nav-link active">Context Degradation</a>
                 <a href="chaos-network.html" class="nav-link">Network Partitions</a>
                 <a href="chaos-memory.html" class="nav-link">Memory Pressure</a>
                 <a href="chaos-presets.html" class="nav-link">Presets</a>
@@ -73,14 +77,366 @@
     <main class="main">
         <div class="page-header">
             <h1>Context Degradation</h1>
-            <p class="subtitle">Test how agents handle context window erosion.</p>
+            <p class="subtitle">Test how agents handle context window erosion via truncation, noise, and drift.</p>
         </div>
 
         <div class="content">
+            <!-- Overview -->
+            <h2 id="overview">Overview</h2>
+            <p>Long-running agents inevitably face context window erosion. Earlier instructions get dropped as new messages fill the window, tool results accumulate noise, and the system prompt drifts from its original intent. <code>ContextDegradation</code> models these three failure modes deterministically, letting you test whether your agent maintains correctness as its context degrades.</p>
+
             <div class="callout callout-info">
-                <strong>📖 Documentation in progress</strong>
-                This page is under construction. For now, check the <a href="quickstart.html">Quickstart</a> or <a href="https://github.com/adam85sims/Sentinel">GitHub README</a>.
+                <strong>📖 Import path</strong>
+                <code>from sentinel.chaos import ContextDegradation, DegradationStrategy</code>
             </div>
+
+            <p>Unlike <code>ToolFailureInjector</code> (which intercepts individual calls), <code>ContextDegradation</code> operates on the step level. You call <code>on_step()</code> each time the agent advances, passing in the current context and system prompt. The injector returns degraded versions.</p>
+
+            <!-- Strategies -->
+            <h2 id="strategies">Three Degradation Strategies</h2>
+
+            <h3>1. Truncation</h3>
+            <p>Progressively removes earlier context entries as steps accumulate. This simulates what happens when a context window fills up — older messages are dropped to make room for new ones. The system prompt (first entry, if present) is always preserved.</p>
+            <ul>
+                <li>At low degradation: 1–2 early entries dropped</li>
+                <li>At high degradation: up to <code>max_truncation_pct</code> of entries dropped from the front</li>
+                <li>System prompt is never truncated</li>
+            </ul>
+
+            <h3>2. Noise</h3>
+            <p>Injects random character substitutions into tool result content. This simulates signal degradation — garbled API responses, corrupted data from partial transfers, or encoding issues in long-running sessions.</p>
+            <ul>
+                <li>Noise rate scales with degradation level</li>
+                <li>At level 0.1: ~1% of characters perturbed</li>
+                <li>At level 1.0: up to 10% of characters corrupted</li>
+                <li>Non-string content is left unchanged</li>
+            </ul>
+
+            <h3>3. Drift</h3>
+            <p>Gradually shifts system prompt instructions via character-level perturbations (swapping adjacent characters in words). This simulates instruction drift — where the agent's understanding of its task slowly diverges from the original spec.</p>
+            <ul>
+                <li>Drift accumulates across steps (compound effect)</li>
+                <li>Short words (≤2 chars) are never drifted</li>
+                <li>At high levels, critical instructions may become garbled</li>
+            </ul>
+
+            <!-- Constructor -->
+            <h2 id="constructor">Constructor Parameters</h2>
+<pre><code>ContextDegradation(
+    strategy: str = "truncation",   # "truncation", "noise", or "drift"
+    start_step: int = 1,            # Step at which degradation begins
+    degradation_rate: float = 0.1,  # Speed of degradation (0.0–1.0)
+    max_truncation_pct: float = 0.5,# Max fraction to truncate (0.0–1.0)
+    seed: Optional[int] = None,     # Random seed for determinism
+)</code></pre>
+
+            <h3>Parameter Details</h3>
+            <ul>
+                <li><strong><code>strategy</code></strong> — Maps to the <code>DegradationStrategy</code> enum: <code>"truncation"</code>, <code>"noise"</code>, or <code>"drift"</code>.</li>
+                <li><strong><code>start_step</code></strong> — Steps before this number run with zero degradation. Default <code>1</code> means degradation starts immediately.</li>
+                <li><strong><code>degradation_rate</code></strong> — Controls the acceleration curve. <code>0.1</code> = mild erosion over many steps. <code>0.5</code> = aggressive. <code>1.0</code> = near-instant maximum degradation.</li>
+                <li><strong><code>max_truncation_pct</code></strong> — For the truncation strategy: the maximum fraction of context that can be dropped. Default <code>0.5</code> means at most 50% of entries are removed.</li>
+                <li><strong><code>seed</code></strong> — Ensures deterministic noise/drift injection across runs.</li>
+            </ul>
+
+            <!-- Quadratic Acceleration -->
+            <h2 id="acceleration-curve">Quadratic Acceleration Curve</h2>
+            <p>Context degradation does not increase linearly. The <code>current_degradation_level</code> property uses a <strong>quadratic acceleration curve</strong> that models real context window behavior — the last 20% of the window is much worse than the first 20%:</p>
+
+<pre><code>@property
+def current_degradation_level(self) -> float:
+    if self._step_count <= self.start_step:
+        return 0.0
+    elapsed = self._step_count - self.start_step
+    raw = elapsed * self.degradation_rate
+    return min(1.0, raw * raw)  # Quadratic!</code></pre>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Elapsed Steps</th>
+                        <th>Rate 0.1</th>
+                        <th>Rate 0.3</th>
+                        <th>Rate 0.5</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>0</td><td>0.00</td><td>0.00</td><td>0.00</td></tr>
+                    <tr><td>1</td><td>0.01</td><td>0.09</td><td>0.25</td></tr>
+                    <tr><td>3</td><td>0.09</td><td>0.81</td><td>1.00</td></tr>
+                    <tr><td>5</td><td>0.25</td><td>1.00</td><td>1.00</td></tr>
+                    <tr><td>10</td><td>1.00</td><td>1.00</td><td>1.00</td></tr>
+                </tbody>
+            </table>
+
+            <div class="callout callout-info">
+                <strong>💡 Why quadratic?</strong>
+                Real context windows exhibit accelerating degradation. A system at 90% context utilization behaves far worse than one at 50% — the remaining space can't absorb new information effectively. The quadratic curve models this compounding effect.
+            </div>
+
+            <!-- Truncation Example -->
+            <h2 id="truncation-example">Truncation Example</h2>
+<pre><code>from sentinel.chaos import ContextDegradation
+
+degradation = ContextDegradation(
+    strategy="truncation",
+    start_step=3,
+    degradation_rate=0.2,
+    max_truncation_pct=0.4,
+)
+
+# Build a context with system prompt + messages
+context = [
+    {"role": "system", "content": "You are a helpful research assistant."},
+    {"role": "user", "content": "Find information about quantum computing."},
+    {"role": "assistant", "content": "I'll search for that."},
+    {"role": "tool", "content": "Found 5 papers on quantum computing."},
+    {"role": "user", "content": "Summarize the first paper."},
+]
+
+# Step 1–2: no degradation
+result = degradation.on_step(step_id=1, context=context)
+print(result["injected"])  # False
+
+result = degradation.on_step(step_id=2, context=context)
+print(result["injected"])  # False
+
+# Step 3+: degradation begins
+result = degradation.on_step(step_id=3, context=context)
+print(result["injected"])   # True
+print(result["degradation_level"])  # 0.01
+print(f"Context entries: {len(result['context'])}")  # May be truncated
+
+# Later steps: more truncation
+for step in range(4, 10):
+    result = degradation.on_step(step_id=step, context=context)
+    if result["injected"]:
+        print(f"Step {step}: level={result['degradation_level']:.2f}, "
+              f"entries={len(result['context'])}")</code></pre>
+
+            <!-- Noise Example -->
+            <h2 id="noise-example">Noise Example</h2>
+<pre><code>degradation = ContextDegradation(
+    strategy="noise",
+    start_step=2,
+    degradation_rate=0.3,
+    seed=42,
+)
+
+context = [
+    {"role": "system", "content": "You are a data analyst."},
+    {"role": "tool", "content": "Query returned 1,247 records with avg temperature 72.3°F"},
+]
+
+result = degradation.on_step(step_id=5, context=context)
+# Noise degrades tool results — garbled characters appear
+# At degradation level 0.81, ~8% of characters are corrupted
+print(result["context"][1]["content"])
+# e.g., "Q!ery r3turned 1,247 r3cords with a4v t3mperature 72.3°F"</code></pre>
+
+            <!-- Drift Example -->
+            <h2 id="drift-example">Drift Example</h2>
+<pre><code>degradation = ContextDegradation(
+    strategy="drift",
+    start_step=1,
+    degradation_rate=0.3,
+    seed=42,
+)
+
+system_prompt = "You are a helpful research assistant. Always cite sources and provide accurate information."
+
+# Over many steps, instructions drift
+for step in range(1, 10):
+    result = degradation.on_step(
+        step_id=step,
+        system_prompt=system_prompt,
+    )
+    if result["injected"]:
+        print(f"Step {step}: {result['system_prompt']}")
+        # Early steps: minor character swaps
+        # Later steps: more words affected, instructions become garbled</code></pre>
+
+            <!-- The on_step() Method -->
+            <h2 id="on-step-method">The <code>on_step()</code> Method</h2>
+            <p>Call <code>on_step()</code> each time your agent advances a step. It returns a dict with the degraded context/prompt and metadata:</p>
+
+<pre><code>result = degradation.on_step(
+    step_id: int,                          # Current step number
+    context: Optional[List[Dict]] = None,  # Context entries (for truncation/noise)
+    system_prompt: Optional[str] = None,   # System prompt (for drift)
+)</code></pre>
+
+            <h3>Return Value</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Key</th>
+            <th>Type</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code>context</code></td>
+            <td><code>List[Dict]</code></td>
+            <td>Possibly truncated/noised context list</td>
+        </tr>
+        <tr>
+            <td><code>system_prompt</code></td>
+            <td><code>str</code></td>
+            <td>Possibly drifted system prompt</td>
+        </tr>
+        <tr>
+            <td><code>degradation_level</code></td>
+            <td><code>float</code></td>
+            <td>Current intensity (0.0 = none, 1.0 = max)</td>
+        </tr>
+        <tr>
+            <td><code>injected</code></td>
+            <td><code>bool</code></td>
+            <td>Whether degradation was applied this step</td>
+        </tr>
+    </tbody>
+</table>
+
+            <div class="callout callout-warning">
+                <strong>⚠️ Pass the right inputs</strong>
+                Truncation and noise strategies require the <code>context</code> parameter. The drift strategy requires the <code>system_prompt</code> parameter. If you pass the wrong one, no degradation is applied (the injector silently skips).
+            </div>
+
+            <!-- make_validator() -->
+            <h2 id="make-validator">The <code>make_validator()</code> Pattern</h2>
+            <p>Use <code>make_validator()</code> to create an assertion-compatible function that checks whether the agent's output is valid given the degradation applied:</p>
+
+<pre><code>from sentinel.chaos import ContextDegradation
+from sentinel.assertions import assert_no_silent_failure
+
+degradation = ContextDegradation(
+    strategy="truncation",
+    degradation_rate=0.3,
+)
+
+# Run agent steps
+context = [...]
+for step_id in range(1, 20):
+    result = degradation.on_step(step_id=step_id, context=context)
+    context = result["context"]  # Use degraded context
+
+# Create validator
+validator = degradation.make_validator(
+    original_context=original_context,   # Pre-degradation reference
+    original_prompt=original_prompt,     # Pre-degradation reference
+)
+
+# Assert output validity
+output = run_agent(context=context)
+assert_no_silent_failure(output, validator=validator)</code></pre>
+
+            <h3>Validator Behavior by Degradation Level</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Level</th>
+                        <th>Validation Rule</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>&lt; 0.3</td>
+                        <td>Any non-None output is valid (mild degradation)</td>
+                    </tr>
+                    <tr>
+                        <td>0.3 – 1.0</td>
+                        <td>Output must be a non-empty string</td>
+                    </tr>
+                    <tr>
+                        <td>N/A (None)</td>
+                        <td>Output is invalid</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Complete Example -->
+            <h2 id="complete-example">Complete Example</h2>
+<pre><code>import pytest
+from sentinel.chaos import ContextDegradation, DegradationStrategy
+from sentinel.env import MockTool
+
+def test_agent_survives_truncation():
+    """Agent should still produce valid output as context degrades."""
+    degradation = ContextDegradation(
+        strategy="truncation",
+        start_step=3,
+        degradation_rate=0.2,
+        max_truncation_pct=0.4,
+        seed=42,
+    )
+
+    context = [
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "What is the capital of France?"},
+    ]
+
+    # Run 10 agent steps with degrading context
+    for step_id in range(1, 11):
+        result = degradation.on_step(step_id=step_id, context=context)
+        context = result["context"]
+        assert result["degradation_level"] >= 0
+
+    # After degradation, agent should still produce something
+    output = run_agent(context=context)
+    assert output is not None
+    assert len(str(output).strip()) > 0
+
+    # Inspect records
+    assert degradation.injection_count > 0
+    for record in degradation.records:
+        print(f"Step {record.step_id}: {record.failure_type} - {record.message}")</code></pre>
+
+            <!-- Full API -->
+            <h2 id="api-reference">Full API Reference</h2>
+<pre><code>class ContextDegradation:
+    """Simulates context window erosion during long-running tasks."""
+
+    # Constructor
+    def __init__(
+        self,
+        strategy: str = "truncation",
+        start_step: int = 1,
+        degradation_rate: float = 0.1,
+        seed: Optional[int] = None,
+        max_truncation_pct: float = 0.5,
+    ) -> None: ...
+
+    # Properties
+    injection_count: int              # Number of degradation applications
+    records: List[InjectionRecord]    # Injection history
+    current_degradation_level: float  # 0.0–1.0 (quadratic acceleration)
+
+    # Core method
+    def on_step(
+        self,
+        step_id: int,
+        context: Optional[List[Dict[str, Any]]] = None,
+        system_prompt: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Process a step and return degraded context/prompt."""
+
+    # Validator
+    def make_validator(
+        self,
+        original_context: Optional[List[Dict[str, Any]]] = None,
+        original_prompt: Optional[str] = None,
+    ) -> Callable[[Any], bool]:
+        """Create a validator for assert_no_silent_failure."""
+
+    def reset(self) -> None:
+        """Reset degradation state."""
+</code></pre>
+        </div>
+
+        <div style="margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); color: var(--fg-muted); font-size: 0.875rem;">
+            <p>Built by <a href="/">Adam Sims</a> · <a href="https://github.com/adam85sims/Sentinel">GitHub</a> · MIT License</p>
         </div>
     </main>
 </div>

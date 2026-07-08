@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mock Tools — Sentinel</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23E95420'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='18' font-family='monospace'>S</text></svg>">
-    <link rel="stylesheet" href="css/docs.css">
+    <link rel="stylesheet" href="../css/docs.css">
 </head>
 <body>
 
@@ -41,15 +41,29 @@
             <div class="nav-group">
                 <div class="nav-group-title">Chaos Engineering</div>
                 <a href="chaos.html" class="nav-link">Overview</a>
+                <a href="chaos-tool-failures.html" class="nav-link">Tool Failures</a>
+                <a href="chaos-context.html" class="nav-link">Context Degradation</a>
+                <a href="chaos-network.html" class="nav-link">Network Partitions</a>
+                <a href="chaos-memory.html" class="nav-link">Memory Pressure</a>
                 <a href="chaos-presets.html" class="nav-link">Presets</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Framework Adapters</div>
+                <a href="adapters-langchain.html" class="nav-link">LangChain</a>
+                <a href="adapters-crewai.html" class="nav-link">CrewAI</a>
+                <a href="adapters-openai.html" class="nav-link">OpenAI SDK</a>
+                <a href="adapters-custom.html" class="nav-link">Custom Adapters</a>
             </div>
             <div class="nav-group">
                 <div class="nav-group-title">Advanced</div>
                 <a href="scenarios.html" class="nav-link">YAML Scenarios</a>
+                <a href="baselines.html" class="nav-link">Baselines</a>
+                <a href="ci-cd.html" class="nav-link">CI/CD Integration</a>
                 <a href="api.html" class="nav-link">API Reference</a>
             </div>
             <div class="nav-group">
                 <div class="nav-group-title">Resources</div>
+                <a href="governance.html" class="nav-link">Governance</a>
                 <a href="faq.html" class="nav-link">FAQ</a>
                 <a href="https://github.com/adam85sims/Sentinel" target="_blank" class="nav-link">GitHub →</a>
             </div>
@@ -148,6 +162,6 @@ results = db.query("SELECT * FROM users WHERE id = 1")</code></pre>
     </main>
 </div>
 
-<script src="js/docs.js"></script>
+<script src="../js/docs.js"></script>
 </body>
 </html>

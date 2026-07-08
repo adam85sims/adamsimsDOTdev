@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Network Partitions — Sentinel</title>
+    <meta name="description" content="Deep dive on NetworkPartition — simulate partial connectivity, latency, and service isolation between microservices.">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23E95420'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='18' font-family='monospace'>S</text></svg>">
     <link rel="stylesheet" href="../css/docs.css">
 </head>
@@ -12,7 +13,10 @@
 <header class="header">
     <button class="mobile-toggle" aria-label="Menu">☰</button>
     <a href="/" class="header-brand">
-        <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="6" fill="#E95420"/><path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="6" fill="#E95420"/>
+            <path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
         <h1>Sentinel</h1>
     </a>
     <nav class="header-nav">
@@ -43,7 +47,7 @@
                 <a href="chaos.html" class="nav-link">Overview</a>
                 <a href="chaos-tool-failures.html" class="nav-link">Tool Failures</a>
                 <a href="chaos-context.html" class="nav-link">Context Degradation</a>
-                <a href="chaos-network.html" class="nav-link">Network Partitions</a>
+                <a href="chaos-network.html" class="nav-link active">Network Partitions</a>
                 <a href="chaos-memory.html" class="nav-link">Memory Pressure</a>
                 <a href="chaos-presets.html" class="nav-link">Presets</a>
             </div>
@@ -73,14 +77,408 @@
     <main class="main">
         <div class="page-header">
             <h1>Network Partitions</h1>
-            <p class="subtitle">Simulate partial connectivity between services.</p>
+            <p class="subtitle">Deep dive on NetworkPartition — simulate partial connectivity, service isolation, and healing.</p>
         </div>
 
         <div class="content">
+            <!-- Overview -->
+            <h2 id="overview">Overview</h2>
+            <p>In distributed microservice architectures, network partitions are a fact of life. Services lose connectivity to each other due to DNS failures, cloud provider outages, firewall misconfigurations, or infrastructure upgrades. <code>NetworkPartition</code> models these scenarios by defining a connectivity matrix that controls which services can reach which other services.</p>
+
             <div class="callout callout-info">
-                <strong>📖 Documentation in progress</strong>
-                This page is under construction. For now, check the <a href="quickstart.html">Quickstart</a> or <a href="https://github.com/adam85sims/Sentinel">GitHub README</a>.
+                <strong>📖 Import path</strong>
+                <code>from sentinel.chaos import NetworkPartition</code>
             </div>
+
+            <p>When a partition is active, calls between disconnected services fail with <code>TimeoutError</code>, simulating a connection that never completes.</p>
+
+            <!-- Connectivity Matrix -->
+            <h2 id="connectivity-matrix">The Connectivity Matrix</h2>
+            <p>The <code>connectivity</code> parameter is a dictionary mapping each service name to the list of services it can reach. If service A is <strong>not</strong> in B's reachable list, any call from A to B will fail.</p>
+
+<pre><code>partition = NetworkPartition(
+    connectivity={
+        "api": ["database", "cache"],       # api can reach db and cache
+        "database": ["api"],                  # db can reach api only
+        "cache": ["api"],                     # cache can reach api only
+        "external_api": [],                   # isolated — can't reach anything
+        "webhook": [],                        # isolated — can't reach anything
+    },
+    partition_probability=1.0,  # Always partitioned
+)</code></pre>
+
+            <div class="callout callout-warning">
+                <strong>⚠️ Asymmetric partitions</strong>
+                The connectivity matrix is <strong>not</strong> automatically symmetric. If A can reach B, B does not necessarily reach A. This models real-world asymmetric partitions (e.g., a firewall rule that blocks inbound but not outbound traffic).
+            </div>
+
+            <h3>Connectivity Examples</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Scenario</th>
+                        <th>Connectivity Matrix</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Full isolation</td>
+                        <td><code>{"db": [], "api": [], "cache": []}</code></td>
+                    </tr>
+                    <tr>
+                        <td>API ↔ DB only</td>
+                        <td><code>{"api": ["db"], "db": ["api"], "cache": []}</code></td>
+                    </tr>
+                    <tr>
+                        <td>External services down</td>
+                        <td><code>{"api": ["db", "cache"], "db": ["api"], "ext": []}</code></td>
+                    </tr>
+                    <tr>
+                        <td>Star topology</td>
+                        <td><code>{"hub": ["a","b","c"], "a": ["hub"], "b": ["hub"], "c": ["hub"]}</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Constructor -->
+            <h2 id="constructor">Constructor Parameters</h2>
+<pre><code>NetworkPartition(
+    connectivity: Dict[str, List[str]],  # Service reachability matrix
+    partition_probability: float = 1.0,  # 0.0–1.0, chance partition is active
+    seed: Optional[int] = None,          # Random seed for determinism
+    heal_after_calls: Optional[int] = None,  # Heal after N failed calls
+)</code></pre>
+
+            <h3>Parameter Details</h3>
+            <ul>
+                <li><strong><code>connectivity</code></strong> — The core definition. Maps each service name to the list of services it can reach. Services not in the dict are treated as unreachable from all sources.</li>
+                <li><strong><code>partition_probability</code></strong> — At <code>1.0</code> (default), every call checks connectivity. At lower values, some calls pass through even to disconnected services (simulating intermittent connectivity).</li>
+                <li><strong><code>seed</code></strong> — Deterministic random seed for the probability check.</li>
+                <li><strong><code>heal_after_calls</code></strong> — When set, the partition automatically heals after this many failed calls. Useful for testing recovery behavior.</li>
+            </ul>
+
+            <!-- Key Methods -->
+            <h2 id="key-methods">Key Methods</h2>
+
+            <h3><code>is_reachable(source, target)</code></h3>
+            <p>Check whether <code>source</code> can reach <code>target</code> given the current connectivity matrix and partition state:</p>
+
+<pre><code>partition = NetworkPartition(
+    connectivity={
+        "api": ["database", "cache"],
+        "database": ["api"],
+        "cache": [],
+    },
+)
+
+print(partition.is_reachable("api", "database"))   # True
+print(partition.is_reachable("api", "external"))    # False
+print(partition.is_reachable("cache", "api"))       # False (cache can't reach api)
+print(partition.is_reachable("database", "api"))    # True</code></pre>
+
+            <h3><code>partition_service()</code> / <code>restore_service()</code></h3>
+            <p>After creating a partition, you can dynamically modify which services are isolated:</p>
+
+<pre><code>partition = NetworkPartition(
+    connectivity={
+        "api": ["database", "cache", "search"],
+        "database": ["api"],
+        "cache": ["api"],
+        "search": ["api"],
+    },
+)
+
+# Initially, api can reach search
+assert partition.is_reachable("api", "search")  # True
+
+# Dynamically isolate search
+partition.partition_service("search")  # Makes search unreachable
+assert not partition.is_reachable("api", "search")  # False
+
+# Restore connectivity
+partition.restore_service("search")
+assert partition.is_reachable("api", "search")  # True</code></pre>
+
+            <h3><code>check_connectivity()</code></h3>
+            <p>Returns the current effective connectivity state — useful for logging and debugging:</p>
+
+<pre><code>state = partition.check_connectivity()
+# Returns dict with current connectivity matrix and active status</code></pre>
+
+            <h3><code>get_isolated_services()</code></h3>
+            <p>Returns a list of services that are currently unable to reach any other service:</p>
+
+<pre><code>partition = NetworkPartition(
+    connectivity={
+        "api": ["database"],
+        "database": ["api"],
+        "cache": [],       # isolated
+        "search": [],      # isolated
+    },
+)
+
+isolated = partition.get_isolated_services()
+print(isolated)  # ["cache", "search"]</code></pre>
+
+            <!-- Wrapping Tools -->
+            <h2 id="wrapping-tools">Wrapping Tools</h2>
+            <p>Use <code>wrap()</code> to install network partition simulation on a MockTool. When the tool is called and the target service is unreachable, a <code>TimeoutError</code> is raised:</p>
+
+<pre><code>from sentinel.chaos import NetworkPartition
+from sentinel.env import MockTool
+
+# Set up tools
+api_tool = MockTool("api", response={"status": 200})
+cache_tool = MockTool("cache", response={"data": "cached"})
+
+# Define partition: api can reach database but not cache
+partition = NetworkPartition(
+    connectivity={
+        "api": ["database"],
+        "database": ["api"],
+        "cache": [],
+    },
+    partition_probability=1.0,
+)
+
+# Wrap tools — calls to disconnected services fail
+wrapped_api = partition.wrap(api_tool)
+wrapped_cache = partition.wrap(cache_tool)
+
+# Api tool works (it can reach its target)
+result = wrapped_api(endpoint="/users")  # OK
+
+# Cache tool fails (it's isolated)
+try:
+    result = wrapped_cache(key="user:123")
+except TimeoutError as e:
+    print(f"Network partition: {e}")</code></pre>
+
+            <!-- Partial Degradation -->
+            <h2 id="partial-degradation">Partial Degradation</h2>
+            <p>Beyond full partitions, you can model partial degradation with latency, packet loss, and jitter. This is common in cross-region deployments or during cloud provider incidents.</p>
+
+            <h3>Latency</h3>
+<pre><code># Add artificial latency to tool calls
+from sentinel.chaos import NetworkPartition
+
+partition = NetworkPartition(
+    connectivity={
+        "api": ["database", "cache"],
+        "database": ["api"],
+    },
+    partition_probability=0.3,  # 30% chance of partition per call
+    seed=42,
+)
+
+# Combine with tool wrappers that add latency
+# The partition handles connectivity; add latency separately:
+import time
+
+original_tool = MockTool("api", response="ok")
+wrapped = partition.wrap(original_tool)</code></pre>
+
+            <h3>Packet Loss &amp; Jitter</h3>
+            <p>While the base <code>NetworkPartition</code> handles connectivity, you can combine it with custom tool wrappers to add packet loss and jitter effects:</p>
+
+<pre><code># Simulate 20% packet loss + 100ms jitter on API calls
+class DegradedApiTool:
+    def __init__(self, tool, loss_rate=0.2, jitter_ms=100):
+        self._tool = tool
+        self._loss_rate = loss_rate
+        self._jitter_ms = jitter_ms
+        self._rng = random.Random(seed)
+
+    def __call__(self, **kwargs):
+        # Simulate packet loss
+        if self._rng.random() < self._loss_rate:
+            raise TimeoutError("Packet lost — connection reset")
+
+        # Simulate jitter
+        jitter = self._rng.uniform(0, self._jitter_ms / 1000)
+        time.sleep(jitter)
+
+        return self._tool(**kwargs)</code></pre>
+
+            <!-- Heal After Calls -->
+            <h2 id="heal-after-calls">Auto-Healing with <code>heal_after_calls</code></h2>
+            <p>The <code>heal_after_calls</code> parameter lets you test recovery behavior. After the specified number of failed calls, the partition heals and all services become reachable again:</p>
+
+<pre><code>partition = NetworkPartition(
+    connectivity={
+        "api": ["database"],
+        "database": ["api"],
+        "cache": [],
+    },
+    partition_probability=1.0,
+    heal_after_calls=3,  # Heal after 3 failed calls
+)
+
+tool = MockTool("cache", response="data")
+wrapped = partition.wrap(tool)
+
+# Calls 1–3: fail (partition active)
+for i in range(3):
+    try:
+        wrapped(key=f"item:{i}")
+    except TimeoutError:
+        print(f"Call {i+1}: partition active")
+
+# Call 4+: succeeds (partition healed)
+result = wrapped(key="item:4")
+print(f"Call 4: succeeded with {result}")</code></pre>
+
+            <div class="callout callout-info">
+                <strong>💡 Reset for new test runs</strong>
+                Call <code>partition.reset()</code> to restore the partition to its initial state after a test run. This is essential for test isolation.
+            </div>
+
+            <!-- Real-World Scenarios -->
+            <h2 id="real-world-scenarios">Real-World Scenarios</h2>
+
+            <h3>Cloud Provider Outage</h3>
+            <p>Simulate a scenario where one availability zone goes down, isolating a subset of services:</p>
+
+<pre><code>cloud_outage = NetworkPartition(
+    connectivity={
+        "api_az1": ["database", "cache", "queue"],
+        "api_az2": ["database", "cache", "queue"],
+        "database": ["api_az1", "api_az2"],       # Cross-AZ replication
+        "cache_az1": ["api_az1"],                   # Only local cache
+        "cache_az2": ["api_az2"],
+        "queue_az2": [],                            # Queue service is down
+    },
+    partition_probability=1.0,
+    heal_after_calls=10,  # Recovery after 10 failures
+)</code></pre>
+
+            <h3>DNS Failure</h3>
+            <p>Simulate DNS resolution failures where external services are unreachable:</p>
+
+<pre><code>dns_failure = NetworkPartition(
+    connectivity={
+        "agent": ["local_tools", "cache"],
+        "local_tools": ["agent", "database"],
+        "external_api": [],     # DNS resolution fails
+        "search_engine": [],    # DNS resolution fails
+        "webhook": [],          # DNS resolution fails
+    },
+    partition_probability=0.7,  # 70% of external calls fail
+    seed=42,
+)</code></pre>
+
+            <h3>Split-Brain Network</h3>
+            <p>Simulate a split-brain scenario where two halves of the system can't communicate:</p>
+
+<pre><code>split_brain = NetworkPartition(
+    connectivity={
+        "leader": ["replica1", "replica2"],
+        "replica1": ["leader"],
+        "replica2": ["leader"],
+        # Left half
+        "service_a": ["service_b"],
+        "service_b": ["service_a"],
+        # Right half
+        "service_c": ["service_d"],
+        "service_d": ["service_c"],
+        # Cross-half: isolated!
+        "service_a": [],  # Can't reach right half
+        "service_c": [],  # Can't reach left half
+    },
+    partition_probability=1.0,
+)</code></pre>
+
+            <!-- Complete Example -->
+            <h2 id="complete-example">Complete Test Example</h2>
+<pre><code>import pytest
+from sentinel.chaos import NetworkPartition
+from sentinel.env import MockTool
+from sentinel.assertions import assert_no_silent_failure
+
+def test_agent_handles_network_partition():
+    """Agent should handle partial service isolation gracefully."""
+    # Set up tools
+    api_tool = MockTool("api", response={"status": 200})
+    cache_tool = MockTool("cache", response={"data": "cached"})
+
+    # Define partition
+    partition = NetworkPartition(
+        connectivity={
+            "api": ["database"],
+            "cache": [],  # Cache is isolated
+        },
+        partition_probability=1.0,
+        heal_after_calls=5,
+        seed=42,
+    )
+
+    # Wrap tools
+    wrapped_api = partition.wrap(api_tool)
+    wrapped_cache = partition.wrap(cache_tool)
+
+    # Run agent — it should handle cache failures
+    output = run_agent(api=wrapped_api, cache=wrapped_cache)
+
+    # Assertions
+    assert output is not None
+    assert_no_silent_failure(output)
+
+    # Verify partition occurred
+    assert partition.injection_count > 0
+
+    # Verify agent adapted (used fallback, retried, etc.)
+    isolated = partition.get_isolated_services()
+    assert "cache" in isolated</code></pre>
+
+            <!-- Full API -->
+            <h2 id="api-reference">Full API Reference</h2>
+<pre><code>class NetworkPartition:
+    """Simulates network partitions between services."""
+
+    # Constructor
+    def __init__(
+        self,
+        connectivity: Dict[str, List[str]],
+        partition_probability: float = 1.0,
+        seed: Optional[int] = None,
+        heal_after_calls: Optional[int] = None,
+    ) -> None: ...
+
+    # Properties
+    injection_count: int  # Total partition failures injected
+
+    # Connectivity checks
+    def is_reachable(self, source: str, target: str) -> bool:
+        """Check if source can reach target."""
+
+    def check_connectivity(self) -> Dict:
+        """Get current connectivity state."""
+
+    def get_isolated_services(self) -> List[str]:
+        """Get services that can't reach anything."""
+
+    # Dynamic partition management
+    def partition_service(self, service: str) -> None:
+        """Isolate a service from all others."""
+
+    def restore_service(self, service: str) -> None:
+        """Restore a service's connectivity."""
+
+    # Wrapping
+    def wrap(self, tool: MockTool) -> ChaosToolWrapper:
+        """Wrap a MockTool with network partition simulation."""
+
+    # State management
+    def reset(self) -> None:
+        """Reset partition state."""
+
+    def make_validator(self) -> Callable[[Any], bool]:
+        """Create a validator for assert_no_silent_failure."""
+</code></pre>
+        </div>
+
+        <div style="margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); color: var(--fg-muted); font-size: 0.875rem;">
+            <p>Built by <a href="/">Adam Sims</a> · <a href="https://github.com/adam85sims/Sentinel">GitHub</a> · MIT License</p>
         </div>
     </main>
 </div>

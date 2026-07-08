@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Governance — Sentinel</title>
+    <meta name="description" content="Verify agent claims against independent evidence with Sentinel's governance audit harness.">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23E95420'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='18' font-family='monospace'>S</text></svg>">
     <link rel="stylesheet" href="../css/docs.css">
 </head>
@@ -12,7 +13,10 @@
 <header class="header">
     <button class="mobile-toggle" aria-label="Menu">☰</button>
     <a href="/" class="header-brand">
-        <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="6" fill="#E95420"/><path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="6" fill="#E95420"/>
+            <path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
         <h1>Sentinel</h1>
     </a>
     <nav class="header-nav">
@@ -63,7 +67,7 @@
             </div>
             <div class="nav-group">
                 <div class="nav-group-title">Resources</div>
-                <a href="governance.html" class="nav-link">Governance</a>
+                <a href="governance.html" class="nav-link active">Governance</a>
                 <a href="faq.html" class="nav-link">FAQ</a>
                 <a href="https://github.com/adam85sims/Sentinel" target="_blank" class="nav-link">GitHub →</a>
             </div>
@@ -77,9 +81,210 @@
         </div>
 
         <div class="content">
+
+            <h2>Overview</h2>
+            <p>Sentinel's governance harness independently verifies what an autonomous agent claims to have done. It compares the agent's diary entry (claims) against independently observed facts about the project (evidence) and produces a structured audit report with discrepancies, severity levels, and a verdict.</p>
+
             <div class="callout callout-info">
-                <strong>📖 Documentation in progress</strong>
-                This page is under construction. For now, check the <a href="quickstart.html">Quickstart</a> or <a href="https://github.com/adam85sims/Sentinel">GitHub README</a>.
+                <strong>📖 Why governance?</strong>
+                Autonomous agents can hallucinate — claiming tests pass when they fail, claiming files exist when they don't, or even backdating entries. Sentinel's governance harness catches these automatically, with zero trust in the agent's self-reporting.
+            </div>
+
+            <h3>Audit Flow</h3>
+            <ol>
+                <li><strong>Collect evidence</strong> — run tests, check file timestamps, count tools, verify existence. This happens FIRST, before reading any claims.</li>
+                <li><strong>Extract claims</strong> — parse the agent's diary entry for test counts, tool counts, files modified, dates, etc.</li>
+                <li><strong>Audit</strong> — compare claims against evidence using the deterministic comparator (always) and optionally an LLM auditor.</li>
+                <li><strong>Post-process</strong> — extract structured findings, merge results, compute final verdict.</li>
+                <li><strong>Report</strong> — save JSON + human-readable reports.</li>
+            </ol>
+
+            <h2>Option C: Pure Deterministic Comparator</h2>
+            <p>The default and recommended approach. The deterministic comparator in <code>extract.py</code> is the primary audit mechanism — pure regex and quantitative comparison with zero infrastructure requirements.</p>
+
+            <div class="callout callout-success">
+                <strong>✅ Why deterministic?</strong>
+                The original build used an LLM auditor that hallucinated mismatches (claiming "actual: 0" for test counts despite evidence showing otherwise). The deterministic comparator catches all the hard errors — and it works everywhere, with zero hallucination risk.
+            </div>
+
+            <h3>What It Catches</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Check Type</th>
+                        <th>Severity</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Test count mismatch</strong></td>
+                        <td>CRITICAL</td>
+                        <td>Agent claims N tests pass, but actual test run shows a different number.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Tool count mismatch</strong></td>
+                        <td>WARNING</td>
+                        <td>Agent claims N tools, but <code>@mcp.tool()</code> decorator count differs.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Future-dated diary</strong></td>
+                        <td>CRITICAL</td>
+                        <td>Diary claims a date in the future — catches backdating.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Backdated diary</strong></td>
+                        <td>CRITICAL</td>
+                        <td>Diary filename claims a date, but file mtime doesn't match.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Missing files</strong></td>
+                        <td>WARNING</td>
+                        <td>Agent claims to have modified files that don't exist on disk.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>README mismatch</strong></td>
+                        <td>WARNING</td>
+                        <td>README claims different test/tool counts than the diary.</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>How It Works</h3>
+            <p>The comparator in <code>extract.py</code> runs four layers:</p>
+            <ol>
+                <li><strong>LLM output parsing</strong> — if an LLM auditor was used, parse its JSON response and extract findings.</li>
+                <li><strong>False positive suppression</strong> — when the comparator confirms numbers match, suppress any LLM finding that claims they don't (prevents hallucinated mismatches).</li>
+                <li><strong>Deterministic checks</strong> — regex-based comparison of claimed vs actual values for test counts, tool counts, dates, and file existence.</li>
+                <li><strong>Verdict computation</strong> — any CRITICAL finding → FAIL. Any WARNING → WARN. Otherwise → PASS.</li>
+            </ol>
+
+            <h2>Optional LLM Auditor</h2>
+            <p>For richer qualitative analysis, Sentinel supports an optional LLM auditor. The default is <code>qwen3.5</code> via Ollama, though any OpenAI-compatible API works.</p>
+
+            <pre><code># auditor.yaml
+backend:
+  type: ollama                    # "none" (default), "openai-compatible", or "ollama"
+  url: http://localhost:11434     # Ollama API endpoint
+
+primary:
+  model: qwen3.5:9b
+  temperature: 0.0
+  max_tokens: 1024</code></pre>
+
+            <h3>What the LLM Adds</h3>
+            <ul>
+                <li><strong>Qualitative analysis</strong> — catches wording inconsistencies, logical gaps, and narrative drift that regex can't detect.</li>
+                <li><strong>Contextual understanding</strong> — understands that "agent claimed X but evidence shows subtle Y" even when the numbers technically match.</li>
+                <li><strong>Nuanced findings</strong> — produces richer descriptions of discrepancies beyond simple count mismatches.</li>
+            </ul>
+
+            <h3>When to Use It</h3>
+            <ul>
+                <li>When you want deeper analysis beyond quantitative checks</li>
+                <li>When your diary entries contain complex claims that need semantic understanding</li>
+                <li>When you're willing to accept the infrastructure cost (running a local LLM)</li>
+            </ul>
+
+            <div class="callout callout-warning">
+                <strong>⚠️ Known limitation</strong>
+                LLM auditors can produce false positives (hallucinating mismatches that don't exist). The deterministic comparator always runs as a safety net — if it confirms numbers match, any contradictory LLM finding is suppressed.
+            </div>
+
+            <h2>Directory Structure</h2>
+            <p>The governance module lives in the <code>governance/</code> directory:</p>
+
+            <pre><code>governance/
+├── __init__.py        # Package exports (run_audit)
+├── audit.py           # Main entry point — orchestrates the full audit
+├── auditor.py         # LLM auditor — calls local models via OpenAI-compatible API
+├── auditor.yaml       # Auditor configuration (backend, model, retry settings)
+├── claims.py          # Extract claims from diary entries (regex-based)
+├── evidence.py        # Collect independent evidence (tests, files, tools)
+├── extract.py         # Deterministic comparator + structured findings extraction
+├── governance.yaml    # Project-level governance config
+├── README.md          # Module documentation
+└── reports/           # Generated audit reports (JSON + human-readable)</code></pre>
+
+            <h3>Key Files</h3>
+            <ul>
+                <li><strong><code>audit.py</code></strong> — The main orchestrator. Runs the 5-step audit flow: collect evidence → extract claims → audit → post-process → report.</li>
+                <li><strong><code>extract.py</code></strong> — The deterministic comparator. Always runs as a safety net. Catches test count mismatches, future-dated entries, missing files, and more.</li>
+                <li><strong><code>claims.py</code></strong> — Parses diary markdown files and extracts verifiable claims using regex patterns (test counts, tool counts, dates, files modified).</li>
+                <li><strong><code>evidence.py</code></strong> — Independently observes the project: runs tests, checks file timestamps, counts tools, analyzes README state.</li>
+                <li><strong><code>auditor.py</code></strong> — Optional LLM auditor. Config-driven, supports multiple backends (Ollama, LM Studio, vLLM, any OpenAI-compatible API).</li>
+            </ul>
+
+            <h2>How to Run the Audit</h2>
+            <p>Run the governance audit as a CLI command or as a Python library:</p>
+
+            <h3>As a CLI</h3>
+            <pre><code># Audit the most recent diary entry
+python3 governance/audit.py . --output governance/reports/
+
+# Audit a specific date
+python3 governance/audit.py . --diary 2026-07-08 --output governance/reports/
+
+# JSON output to stdout
+python3 governance/audit.py . --json</code></pre>
+
+            <h3>As a Library</h3>
+            <pre><code>from governance import run_audit
+
+# Run the full audit
+result = run_audit(
+    project_root=".",
+    diary_date="2026-07-08",  # optional, defaults to most recent
+    output_dir="governance/reports/",  # optional
+)
+
+# Inspect results
+print(f"Verdict: {result.verdict.value}")
+print(f"Summary: {result.summary}")
+for d in result.discrepancies:
+    print(f"  [{d.severity.value}] {d.type}: {d.description}")</code></pre>
+
+            <h3>Sample Output</h3>
+            <pre><code>==================================================
+GOVERNANCE AUDIT — STRUCTURED REPORT
+==================================================
+
+VERDICT: FAIL
+DISCREPANCIES: 2 discrepancies found (1 critical, 1 warnings)
+
+  1. [CRITICAL] Diary claims date 2026-07-15 but today is 2026-07-08. Future-dated entries are not permitted.
+  2. [WARNING] Claimed modified file 'docs/new-feature.md' does not exist in project root
+
+==================================================</code></pre>
+
+            <h2>Configuration</h2>
+            <p>The governance module is configured via <code>governance/governance.yaml</code> and <code>governance/auditor.yaml</code>:</p>
+
+            <pre><code># governance/governance.yaml
+diary_dir: updates          # Directory containing diary entries
+test_dir: tests             # Directory to run tests from
+test_command: [pytest, tests/, -v, --tb=short]
+src_dir: src                # Source directory for file timestamps
+source_file_pattern: "**/*.py"
+mcp_server_file: null       # File to count @mcp.tool() decorators
+readme_path: README.md</code></pre>
+
+            <h2>Severity Levels</h2>
+            <ul>
+                <li><strong>CRITICAL</strong> — False claims, tests that claim to pass but failed, backdated entries, future-dated diaries. Any CRITICAL → verdict is FAIL.</li>
+                <li><strong>WARNING</strong> — Count mismatches, missing files referenced in claims, README inconsistencies. Any WARNING (no CRITICAL) → verdict is WARN.</li>
+                <li><strong>INFO</strong> — Minor drift, wording differences, optional claims with no evidence. Does not affect verdict.</li>
+            </ul>
+
+            <h2>Next Steps</h2>
+            <ul>
+                <li><a href="ci-cd.html">CI/CD Integration</a> — run governance audits in your pipeline</li>
+                <li><a href="assertions.html">Assertions</a> — behavioral assertions for agent testing</li>
+                <li><a href="api.html">API Reference</a> — complete API documentation</li>
+            </ul>
+
+            <div style="margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); color: var(--fg-muted); font-size: 0.875rem;">
+                <p>Built by <a href="/">Adam Sims</a> · <a href="https://github.com/adam85sims/Sentinel">GitHub</a> · MIT License</p>
             </div>
         </div>
     </main>

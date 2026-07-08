@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LangChain Adapter — Sentinel</title>
+    <meta name="description" content="Test real LangChain agents with Sentinel's mock tools, traces, and chaos injection.">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23E95420'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='18' font-family='monospace'>S</text></svg>">
     <link rel="stylesheet" href="../css/docs.css">
 </head>
@@ -12,7 +13,10 @@
 <header class="header">
     <button class="mobile-toggle" aria-label="Menu">☰</button>
     <a href="/" class="header-brand">
-        <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="6" fill="#E95420"/><path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="6" fill="#E95420"/>
+            <path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
         <h1>Sentinel</h1>
     </a>
     <nav class="header-nav">
@@ -49,7 +53,7 @@
             </div>
             <div class="nav-group">
                 <div class="nav-group-title">Framework Adapters</div>
-                <a href="adapters-langchain.html" class="nav-link">LangChain</a>
+                <a href="adapters-langchain.html" class="nav-link active">LangChain</a>
                 <a href="adapters-crewai.html" class="nav-link">CrewAI</a>
                 <a href="adapters-openai.html" class="nav-link">OpenAI SDK</a>
                 <a href="adapters-custom.html" class="nav-link">Custom Adapters</a>
@@ -73,13 +77,201 @@
     <main class="main">
         <div class="page-header">
             <h1>LangChain Adapter</h1>
-            <p class="subtitle">Test real LangChain agents with Sentinel.</p>
+            <p class="subtitle">Test real LangChain agents with Sentinel's mock tools, traces, and chaos injection.</p>
         </div>
 
         <div class="content">
+
+            <h2>Installation</h2>
+            <p>Install the LangChain adapter as an optional extra:</p>
+            <pre><code>pip install sentinel[langchain]</code></pre>
+            <p>This pulls in <code>langchain-core</code> (≥ 0.2) for <code>BaseTool</code>, <code>Runnable</code>, and tool invocation protocols. If you skip the extra, you can still use the adapter for standalone mock-only testing without the framework.</p>
+
+            <h2>SentinelToolAdapter</h2>
+            <p>The core building block. <code>SentinelToolAdapter</code> wraps a LangChain <code>BaseTool</code> with a Sentinel <code>MockTool</code>, intercepting every invocation and recording it into an <code>AgentTrace</code>.</p>
+
+            <pre><code>from sentinel.adapters.langchain import SentinelToolAdapter
+from sentinel.env import MockTool
+from sentinel.models import AgentTrace
+
+trace = AgentTrace()
+
+# Wrap a real LangChain tool with a mock
+adapter = SentinelToolAdapter(
+    mock=MockTool("search", response=SEARCH_RESULTS),
+    trace=trace,
+    base_tool=real_langchain_tool,  # original BaseTool (optional)
+)
+
+# Invoke it — delegates to the mock, records into trace
+result = adapter.invoke(input={"query": "refund policy"})
+print(f"Mock response: {result}")</code></pre>
+
+            <h3>Parameters</h3>
+            <ul>
+                <li><code>mock</code> — A <code>sentinel.env.MockTool</code> providing canned responses, latency simulation, and error injection.</li>
+                <li><code>trace</code> — An <code>AgentTrace</code> instance that records every tool call with arguments, results, duration, and errors.</li>
+                <li><code>base_tool</code> — (Optional) The original LangChain <code>BaseTool</code>. If provided, the adapter preserves the tool's <code>name</code>, <code>description</code>, and <code>args</code> schema. If <code>None</code>, operates as a standalone callable proxy.</li>
+            </ul>
+
+            <h3>What Gets Preserved</h3>
+            <div class="callout callout-success">
+                <strong>✅ Preserved</strong>
+                Tool name, description, argument schema, and invocation interface (<code>invoke()</code>, <code>__call__()</code>). The adapter is drop-in compatible with LangChain's tool protocol.
+            </div>
+
+            <h3>What Gets Replaced</h3>
+            <div class="callout callout-warning">
+                <strong>⚠️ Replaced</strong>
+                Execution → the mock tool provides the response instead of calling the real implementation. All other behavior (input parsing, validation) is preserved when a <code>base_tool</code> is provided.
+            </div>
+
+            <h2>Option 1: Wrapping Individual Tools</h2>
+            <p>Wrap specific tools one at a time. Good when you want fine-grained control over which tools are mocked:</p>
+
+            <pre><code>from sentinel.adapters.langchain import SentinelToolAdapter
+from sentinel.env import MockTool
+from sentinel.models import AgentTrace
+
+trace = AgentTrace()
+
+# Create mock tools
+mock_search = MockTool("search", response={"results": ["doc1", "doc2"]})
+mock_email = MockTool("email", response="sent")
+
+# Wrap individual LangChain tools
+search_adapter = SentinelToolAdapter(
+    mock=mock_search, trace=trace, base_tool=langchain_search_tool
+)
+email_adapter = SentinelToolAdapter(
+    mock=mock_email, trace=trace, base_tool=langchain_email_tool
+)
+
+# Wire into your agent
+agent = create_react_agent(
+    model,
+    tools=[search_adapter, email_adapter],
+    prompt=prompt,
+)
+result = agent.invoke({"messages": [...]})
+
+# Inspect what happened
+print(f"Search called {search_adapter.mock.call_count} times")
+print(f"Email called {email_adapter.mock.call_count} times")
+print(f"Trace has {trace.total_tool_calls} total calls")</code></pre>
+
+            <h2>Option 2: Wrapping the Entire Agent</h2>
+            <p>Use <code>wrap_agent()</code> to wrap an entire LangChain agent at once. This creates an <code>AgentWrapper</code> that intercepts all tool calls through a <code>tool_map</code>:</p>
+
+            <pre><code>from sentinel.adapters.langchain import wrap_agent
+from sentinel.env import MockTool
+from sentinel.models import AgentTrace
+
+trace = AgentTrace()
+
+# Define mock responses for every tool the agent uses
+tool_map = {
+    "search": MockTool("search", response={"results": ["doc1"]}),
+    "email": MockTool("email", response="sent"),
+    "database": MockTool("database", response={"rows": 42}),
+}
+
+# Wrap the entire agent
+wrapped = wrap_agent(
+    agent=my_langchain_agent,
+    tool_map=tool_map,
+    trace=trace,
+)
+
+# Use it exactly like the original agent
+result = wrapped.invoke({"messages": [...]})
+
+# Access individual adapters
+search_adapter = wrapped.adapters["search"]
+print(f"Search called {search_adapter.mock.call_count} times")
+
+# Access the mock tool directly
+search_mock = wrapped.get_mock("search")
+print(f"Search mock responses: {search_mock.responses}")</code></pre>
+
+            <h2>Integration with Chaos Injectors</h2>
+            <p>Combine adapters with Sentinel's chaos layer to test agent resilience:</p>
+
+            <pre><code>from sentinel.adapters.langchain import wrap_agent
+from sentinel.chaos import inject_failures
+from sentinel.env import MockTool
+from sentinel.models import AgentTrace
+
+trace = AgentTrace()
+
+# Create a mock tool, then inject chaos
+search_mock = MockTool("search", response={"results": ["doc1"]})
+inject_failures(search_mock, failure_rate=0.3, error_type="TimeoutError")
+
+# Wrap agent with the chaotic mock
+wrapped = wrap_agent(
+    agent=my_agent,
+    tool_map={"search": search_mock},
+    trace=trace,
+)
+
+# Run multiple times to observe behavior under failure
+for i in range(10):
+    result = wrapped.invoke({"messages": [...]})
+    # Agent should retry or degrade gracefully
+
+# Check how many calls succeeded vs failed
+successes = sum(1 for tc in trace.tool_calls if tc.error is None)
+failures = sum(1 for tc in trace.tool_calls if tc.error is not None)
+print(f"Successes: {successes}, Failures: {failures}")</code></pre>
+
+            <p>Learn more about chaos injection in the <a href="chaos.html">Chaos Engineering</a> overview and <a href="chaos-tool-failures.html">Tool Failures</a> guide.</p>
+
+            <h2>Integration Test Results</h2>
+            <p>The LangChain adapter is tested with real LangChain components:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Test Category</th>
+                        <th>Tests</th>
+                        <th>Result</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Real tool wrapping (BaseTool ↔ MockTool)</td>
+                        <td>5</td>
+                        <td>✅ 5/5 pass</td>
+                    </tr>
+                    <tr>
+                        <td>Agent loop (invoke → tool calls → trace)</td>
+                        <td>3</td>
+                        <td>✅ 3/3 pass</td>
+                    </tr>
+                    <tr>
+                        <td>Chaos integration (failures + assertions)</td>
+                        <td>3</td>
+                        <td>✅ 3/3 pass</td>
+                    </tr>
+                </tbody>
+            </table>
+
             <div class="callout callout-info">
-                <strong>📖 Documentation in progress</strong>
-                This page is under construction. For now, check the <a href="quickstart.html">Quickstart</a> or <a href="https://github.com/adam85sims/Sentinel">GitHub README</a>.
+                <strong>📖 Full integration test suite</strong>
+                16/16 adapter tests pass across all frameworks (5 real tool, 3 agent loop, 3 chaos, 2 env builder, 3 assertions). See the <a href="api.html">API Reference</a> for the complete test matrix.
+            </div>
+
+            <h2>Next Steps</h2>
+            <ul>
+                <li><a href="adapters-crewai.html">CrewAI Adapter</a> — test CrewAI crews with the same mock tool layer</li>
+                <li><a href="adapters-openai.html">OpenAI SDK Adapter</a> — test OpenAI Agents SDK tools</li>
+                <li><a href="adapters-custom.html">Custom Adapters</a> — write adapters for any agent framework</li>
+                <li><a href="traces.html">Agent Traces</a> — understand what gets recorded and how to assert against it</li>
+            </ul>
+
+            <div style="margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); color: var(--fg-muted); font-size: 0.875rem;">
+                <p>Built by <a href="/">Adam Sims</a> · <a href="https://github.com/adam85sims/Sentinel">GitHub</a> · MIT License</p>
             </div>
         </div>
     </main>

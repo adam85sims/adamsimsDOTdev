@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CI/CD Integration — Sentinel</title>
+    <meta name="description" content="Run Sentinel behavioral tests in GitHub Actions, GitLab CI, and other CI/CD pipelines. Generate JUnit XML reports and detect regressions automatically.">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23E95420'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='18' font-family='monospace'>S</text></svg>">
     <link rel="stylesheet" href="../css/docs.css">
 </head>
@@ -12,7 +13,10 @@
 <header class="header">
     <button class="mobile-toggle" aria-label="Menu">☰</button>
     <a href="/" class="header-brand">
-        <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="6" fill="#E95420"/><path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="6" fill="#E95420"/>
+            <path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
         <h1>Sentinel</h1>
     </a>
     <nav class="header-nav">
@@ -58,7 +62,7 @@
                 <div class="nav-group-title">Advanced</div>
                 <a href="scenarios.html" class="nav-link">YAML Scenarios</a>
                 <a href="baselines.html" class="nav-link">Baselines</a>
-                <a href="ci-cd.html" class="nav-link">CI/CD Integration</a>
+                <a href="ci-cd.html" class="nav-link active">CI/CD Integration</a>
                 <a href="api.html" class="nav-link">API Reference</a>
             </div>
             <div class="nav-group">
@@ -73,13 +77,261 @@
     <main class="main">
         <div class="page-header">
             <h1>CI/CD Integration</h1>
-            <p class="subtitle">Run Sentinel in GitHub Actions, GitLab CI, etc.</p>
+            <p class="subtitle">Run Sentinel in GitHub Actions, GitLab CI, and more.</p>
         </div>
 
         <div class="content">
+
+            <h2>Overview</h2>
+            <p>Sentinel integrates naturally into CI/CD pipelines. Run behavioral tests on every push, generate JUnit XML reports for CI dashboards, and detect regressions automatically with baselines.</p>
+
+            <h2>GitHub Actions</h2>
+
+            <h3>Basic Workflow</h3>
+            <p>Create <code>.github/workflows/sentinel-tests.yml</code>:</p>
+
+            <pre><code>name: Sentinel Behavioral Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  sentinel-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Sentinel
+        run: pip install git+https://github.com/adam85sims/Sentinel.git
+
+      - name: Run Sentinel scenarios
+        run: sentinel run --all --verbose
+
+      - name: Generate JUnit XML report
+        run: |
+          sentinel run --all --json-output > results.json
+          python -c "
+          import json
+          from sentinel.reporting import generate_junit_xml
+          from sentinel.runner import SentinelResult, SentinelAssertionResult
+          from sentinel.models import AgentTrace
+
+          # Load results from JSON
+          with open('results.json') as f:
+              data = json.load(f)
+
+          # Deserialize into SentinelResult objects
+          results = []
+          for r in data['results']:
+              results.append(SentinelResult(
+                  scenario_id=r['scenario_id'],
+                  scenario_name=r['scenario_name'],
+                  passed=r['passed'],
+                  duration_ms=r['duration_ms'],
+                  error=r.get('error'),
+              ))
+
+          # Generate JUnit XML
+          xml = generate_junit_xml(results, suite_name='sentinel')
+          with open('sentinel-results.xml', 'w') as f:
+              f.write(xml)
+          "
+
+      - name: Publish test results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Sentinel Tests
+          path: sentinel-results.xml
+          reporter: java-junit</code></pre>
+
+            <h3>Using YAML Scenarios (Recommended for CI)</h3>
+            <p>The simplest approach: define scenarios in YAML and run them with the CLI. No Python serialization needed:</p>
+
+            <pre><code>name: Sentinel Scenarios
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install git+https://github.com/adam85sims/Sentinel.git
+
+      - name: Run all scenarios
+        run: sentinel run --all --verbose
+
+      - name: Run specific scenario
+        run: sentinel run --path scenarios/critical/refund_agent.yaml --verbose</code></pre>
+
+            <h2>GitLab CI</h2>
+
+            <p>Create <code>.gitlab-ci.yml</code>:</p>
+
+            <pre><code>sentinel-tests:
+  image: python:3.11
+  stage: test
+  script:
+    - pip install git+https://github.com/adam85sims/Sentinel.git
+    - sentinel run --all --verbose
+    - sentinel run --all --json-output > sentinel-results.json
+  artifacts:
+    when: always
+    paths:
+      - sentinel-results.json
+    reports:
+      junit: sentinel-results.xml
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
+    - if: $CI_COMMIT_BRANCH == "main"</code></pre>
+
+            <p>For JUnit XML output in GitLab, add a step to generate the XML file before the job completes:</p>
+
+            <pre><code>  script:
+    - pip install git+https://github.com/adam85sims/Sentinel.git
+    - sentinel run --all --json-output > sentinel-results.json
+    - python -c "
+        import json;
+        from sentinel.reporting import generate_junit_xml;
+        from sentinel.runner import SentinelResult;
+        data = json.load(open('sentinel-results.json'));
+        results = [SentinelResult(scenario_id=r['scenario_id'], scenario_name=r['scenario_name'], passed=r['passed'], duration_ms=r['duration_ms']) for r in data['results']];
+        open('sentinel-results.xml', 'w').write(generate_junit_xml(results))
+        "</code></pre>
+
+            <h2>Generating JUnit XML</h2>
+            <p>Sentinel includes <code>generate_junit_xml()</code> to produce JUnit-compatible XML from test results. This works with any CI system that supports JUnit (GitHub Actions, GitLab CI, Jenkins, CircleCI, etc.).</p>
+
+            <pre><code>from sentinel.reporting import generate_junit_xml
+
+# After running scenarios
+xml_output = generate_junit_xml(results, suite_name="sentinel-regression")
+
+# Write to file
+with open("sentinel-results.xml", "w") as f:
+    f.write(xml_output)</code></pre>
+
+            <p>The generated XML includes:</p>
+            <ul>
+                <li>One <code>&lt;testcase&gt;</code> per scenario</li>
+                <li>Failure details with assertion names and error messages</li>
+                <li>Stdout with trace summary (tools called, steps, duration)</li>
+                <li>Total timing per scenario and for the suite</li>
+            </ul>
+
+            <h2>Exit Codes</h2>
+            <p>The <code>sentinel run</code> command uses standard exit codes for CI integration:</p>
+
+            <table>
+                <thead>
+                    <tr><th>Exit Code</th><th>Meaning</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>0</code></td><td>All scenarios passed</td></tr>
+                    <tr><td><code>1</code></td><td>One or more scenarios failed (or agent crashed)</td></tr>
+                </tbody>
+            </table>
+
+            <p>This means you can use Sentinel directly in CI without extra wrapper scripts — the exit code tells your pipeline whether to pass or fail the build.</p>
+
+            <h2>Report Artifacts</h2>
+            <p>Upload test results as CI artifacts for later inspection:</p>
+
+            <h3>GitHub Actions</h3>
+            <pre><code>      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sentinel-results
+          path: |
+            sentinel-results.json
+            sentinel-results.xml</code></pre>
+
+            <h3>GitLab CI</h3>
+            <pre><code>  artifacts:
+    when: always
+    paths:
+      - sentinel-results.json
+      - sentinel-results.xml
+    reports:
+      junit: sentinel-results.xml</code></pre>
+
+            <h2>Baseline-Driven Regression Detection</h2>
+            <p>For advanced CI workflows, record a baseline on your main branch and compare every PR against it:</p>
+
+            <pre><code>name: Regression Detection
+
+on: pull_request
+
+jobs:
+  detect-regressions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history for baseline loading
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install git+https://github.com/adam85sims/Sentinel.git
+
+      - name: Run current tests
+        run: sentinel run --all --json-output > current-results.json
+
+      - name: Detect regressions
+        run: python -c "
+          import json
+          from sentinel.baseline import load_baseline
+          from sentinel.reporting import build_regression_report
+
+          # Load baseline from main branch
+          _, baseline_results = load_baseline('main-latest')
+
+          # Load current results
+          with open('current-results.json') as f:
+              current_data = json.load(f)
+
+          # ... deserialize current_results ...
+
+          report = build_regression_report(baseline_results, current_results)
+          print(report.summary)
+
+          if report.has_regressions:
+              print('REGRESSIONS DETECTED')
+              exit(1)
+          else:
+              print('No regressions')
+          "</code></pre>
+
+            <div class="callout callout-warning">
+                <strong>💡 Pro tip</strong>
+                Store your baseline in a dedicated branch or use <code>.sentinel/baselines/</code> committed to your repo. For PR-based workflows, you can also use the <code>baseline record</code> command on merge to <code>main</code> to keep the baseline fresh.
+            </div>
+
             <div class="callout callout-info">
-                <strong>📖 Documentation in progress</strong>
-                This page is under construction. For now, check the <a href="quickstart.html">Quickstart</a> or <a href="https://github.com/adam85sims/Sentinel">GitHub README</a>.
+                <strong>ℹ️ Non-deterministic agents</strong>
+                If your agent uses a non-deterministic LLM, consider running scenarios multiple times or using <a href="chaos.html">chaos injection</a> to test resilience rather than exact output matching. Behavioral assertions (tool calls, step counts) are more stable than output assertions for LLM-based agents.
+            </div>
+
+            <!-- Footer -->
+            <div style="margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); color: var(--fg-muted); font-size: 0.875rem;">
+                <p>Built by <a href="/">Adam Sims</a> · <a href="https://github.com/adam85sims/Sentinel">GitHub</a> · MIT License</p>
             </div>
         </div>
     </main>

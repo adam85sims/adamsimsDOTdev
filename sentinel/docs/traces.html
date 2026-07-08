@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agent Traces — Sentinel</title>
+    <meta name="description" content="Record and analyze every action your agent takes. Learn about AgentTrace, Step, ToolCall, StateChange, and Error data structures.">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23E95420'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='18' font-family='monospace'>S</text></svg>">
     <link rel="stylesheet" href="../css/docs.css">
 </head>
@@ -12,7 +13,10 @@
 <header class="header">
     <button class="mobile-toggle" aria-label="Menu">☰</button>
     <a href="/" class="header-brand">
-        <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="6" fill="#E95420"/><path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="6" fill="#E95420"/>
+            <path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
         <h1>Sentinel</h1>
     </a>
     <nav class="header-nav">
@@ -36,7 +40,7 @@
                 <div class="nav-group-title">Core Concepts</div>
                 <a href="mock-tools.html" class="nav-link">Mock Tools</a>
                 <a href="assertions.html" class="nav-link">Assertions</a>
-                <a href="traces.html" class="nav-link">Agent Traces</a>
+                <a href="traces.html" class="nav-link active">Agent Traces</a>
             </div>
             <div class="nav-group">
                 <div class="nav-group-title">Chaos Engineering</div>
@@ -73,13 +77,234 @@
     <main class="main">
         <div class="page-header">
             <h1>Agent Traces</h1>
-            <p class="subtitle">Record and analyze agent execution traces.</p>
+            <p class="subtitle">The flight recorder for agent behavior.</p>
         </div>
 
         <div class="content">
+
+            <h2>What Is an AgentTrace?</h2>
+            <p><code>AgentTrace</code> is the central data structure in Sentinel. It captures every action your agent takes — tool calls, reasoning steps, state mutations, and errors — in an ordered, timestamped log. Assertions in Sentinel operate on the trace, not on output strings.</p>
+
+            <p>Think of it as a flight recorder: every decision, every API call, every failure gets logged so you can verify behavior after the fact.</p>
+
+            <pre><code>from sentinel.models import AgentTrace
+
+trace = AgentTrace()
+# ... your agent runs against the trace ...
+trace.finish()
+
+print(f"Total steps: {trace.total_steps}")
+print(f"Total tool calls: {trace.total_tool_calls}")
+print(f"Duration: {trace.total_duration_ms:.1f}ms")</code></pre>
+
+            <h2>Data Structures</h2>
+
+            <h3>Step</h3>
+            <p>A single atomic action in the agent's execution. Each step represents one unit of work — planning, calling a tool, reasoning, or producing output.</p>
+
+            <pre><code>@dataclass
+class Step:
+    step_id: int                        # Unique step number
+    action: StepAction                  # Type of action (see below)
+    input: Any = None                   # What went into this step
+    output: Any = None                  # What came out
+    duration_ms: float = 0.0           # How long it took
+    tool_calls: List[ToolCall] = []    # Tools invoked during this step
+    error: Optional[Error] = None      # Error if this step failed</code></pre>
+
+            <h3>ToolCall</h3>
+            <p>Records a single tool invocation by the agent. Captures the tool name, arguments, result, and timing.</p>
+
+            <pre><code>@dataclass
+class ToolCall:
+    tool_name: str                      # Name of the tool (e.g. "search")
+    arguments: Dict[str, Any]           # Args passed to the tool
+    result: Any = None                  # Tool's return value
+    duration_ms: float = 0.0           # Call duration
+    error: Optional[str] = None        # Error message if call failed
+    step_id: int = 0                   # Step this call belongs to
+
+    @property
+    def succeeded(self) -> bool:
+        return self.error is None</code></pre>
+
             <div class="callout callout-info">
-                <strong>📖 Documentation in progress</strong>
-                This page is under construction. For now, check the <a href="quickstart.html">Quickstart</a> or <a href="https://github.com/adam85sims/Sentinel">GitHub README</a>.
+                <strong>ℹ️ The <code>succeeded</code> property</strong>
+                A <code>ToolCall</code> succeeds if <code>error</code> is <code>None</code>. This is the primary way to check if a tool call worked. Use it in assertions like <code>assert_tool_called</code> which check the trace's tool call list.
+            </div>
+
+            <h3>StateChange</h3>
+            <p>Records a mutation to agent memory or state. Tracks key-value changes to detect state inconsistency, staleness, and cross-session divergence.</p>
+
+            <pre><code>@dataclass
+class StateChange:
+    key: str                  # State key (e.g. "current_order_id")
+    old_value: Any = None     # Value before the change
+    new_value: Any = None     # Value after the change
+    step_id: int = 0          # Step where this change occurred</code></pre>
+
+            <h3>Error</h3>
+            <p>Records an error encountered during agent execution.</p>
+
+            <pre><code>@dataclass
+class Error:
+    message: str                              # Human-readable error message
+    severity: ErrorSeverity = ErrorSeverity.MEDIUM
+    step_id: int = 0
+    recoverable: bool = True                  # Can the agent recover?
+    timestamp: float = ...</code></pre>
+
+            <h2>Enums</h2>
+
+            <h3>StepAction</h3>
+            <p>Identifies the type of action taken in a step:</p>
+
+            <table>
+                <thead>
+                    <tr><th>Value</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>PLAN</code></td><td>Agent is planning its next move</td></tr>
+                    <tr><td><code>TOOL_CALL</code></td><td>Agent invoked a tool</td></tr>
+                    <tr><td><code>REASON</code></td><td>Agent is reasoning about data or context</td></tr>
+                    <tr><td><code>RESPOND</code></td><td>Agent produced output for the user</td></tr>
+                    <tr><td><code>ERROR</code></td><td>Agent encountered an error during this step</td></tr>
+                </tbody>
+            </table>
+
+            <h3>ErrorSeverity</h3>
+            <table>
+                <thead>
+                    <tr><th>Value</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>LOW</code></td><td>Minor issue, agent can continue</td></tr>
+                    <tr><td><code>MEDIUM</code></td><td>Notable issue, may affect output quality</td></tr>
+                    <tr><td><code>HIGH</code></td><td>Serious error, likely impacts task completion</td></tr>
+                    <tr><td><code>CRITICAL</code></td><td>Fatal error, agent cannot continue</td></tr>
+                </tbody>
+            </table>
+
+            <h2>Building a Trace</h2>
+            <p>Here's how to record agent behavior step by step:</p>
+
+            <pre><code>from sentinel.models import AgentTrace, Step, StepAction, ToolCall, StateChange, Error, ErrorSeverity
+
+trace = AgentTrace()
+
+# Step 1: Agent plans
+trace.add_step(Step(
+    step_id=1,
+    action=StepAction.PLAN,
+    input="User asks about refund policy",
+    output="Need to search for refund docs, then check user account",
+))
+
+# Step 2: Agent calls search tool
+search_result = {"policy": "30-day refund window"}
+trace.add_step(Step(
+    step_id=2,
+    action=StepAction.TOOL_CALL,
+    input={"query": "refund policy"},
+    output=search_result,
+    duration_ms=45.2,
+    tool_calls=[ToolCall(
+        tool_name="search",
+        arguments={"query": "refund policy"},
+        result=search_result,
+        duration_ms=45.2,
+    )],
+))
+
+# Step 3: Agent calls database
+db_result = {"user_id": 42, "order_count": 5}
+trace.add_step(Step(
+    step_id=3,
+    action=StepAction.TOOL_CALL,
+    input={"user_id": 42},
+    output=db_result,
+    duration_ms=12.0,
+    tool_calls=[ToolCall(
+        tool_name="database",
+        arguments={"user_id": 42},
+        result=db_result,
+        duration_ms=12.0,
+    )],
+))
+
+# Record state change
+trace.add_state_change(StateChange(
+    key="current_order_id",
+    old_value=None,
+    new_value="ORD-12345",
+    step_id=3,
+))
+
+# Step 4: Agent responds
+trace.add_step(Step(
+    step_id=4,
+    action=StepAction.RESPOND,
+    output="Your refund policy: 30-day window. You have 5 prior orders.",
+    duration_ms=8.0,
+))
+
+# Mark trace as complete
+trace.finish()</code></pre>
+
+            <h2>Recording Tool Calls at Trace Level</h2>
+            <p>You can also add tool calls directly to the trace (outside of steps) for quick recording:</p>
+
+            <pre><code># Direct tool call recording
+trace.add_tool_call(ToolCall(
+    tool_name="email",
+    arguments={"to": "user@example.com", "subject": "Refund confirmation"},
+    result={"sent": True},
+    duration_ms=120.0,
+))</code></pre>
+
+            <h2>Trace Properties</h2>
+            <p>Once your trace is populated, use these properties to analyze the agent's behavior:</p>
+
+            <table>
+                <thead>
+                    <tr><th>Property</th><th>Type</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>total_steps</code></td><td><code>int</code></td><td>Number of steps recorded</td></tr>
+                    <tr><td><code>total_tool_calls</code></td><td><code>int</code></td><td>Number of tool calls (across all steps)</td></tr>
+                    <tr><td><code>total_duration_ms</code></td><td><code>float</code></td><td>Wall-clock time from creation to <code>finish()</code></td></tr>
+                    <tr><td><code>tool_names_called</code></td><td><code>List[str]</code></td><td>Unique tool names in order of first call</td></tr>
+                    <tr><td><code>failed_tool_calls</code></td><td><code>List[ToolCall]</code></td><td>All tool calls where <code>succeeded == False</code></td></tr>
+                </tbody>
+            </table>
+
+            <pre><code># Query the trace
+print(f"Steps: {trace.total_steps}")                    # 4
+print(f"Tool calls: {trace.total_tool_calls}")          # 2
+print(f"Duration: {trace.total_duration_ms:.1f}ms")     # 65.2ms
+print(f"Tools: {trace.tool_names_called}")               # ["search", "database"]
+print(f"Failed calls: {len(trace.failed_tool_calls)}")   # 0
+
+# Get all calls to a specific tool
+search_calls = trace.tool_calls_by_name("search")</code></pre>
+
+            <h2>Serialization</h2>
+            <p>Traces can be serialized to dictionaries for reporting, storage, or JSON export:</p>
+
+            <pre><code># Convert to dict
+trace_dict = trace.to_dict()
+# Returns: {total_steps, total_tool_calls, total_duration_ms,
+#           tool_names_called, failed_tool_calls_count, errors_count,
+#           state_changes_count, metadata}</code></pre>
+
+            <div class="callout callout-success">
+                <strong>✅ Why traces matter</strong>
+                Traces decouple <em>what the agent did</em> from <em>what the agent said</em>. You can assert that the agent called the right tools, handled errors gracefully, and didn't make unnecessary calls — even if the final output is non-deterministic.
+            </div>
+
+            <!-- Footer -->
+            <div style="margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); color: var(--fg-muted); font-size: 0.875rem;">
+                <p>Built by <a href="/">Adam Sims</a> · <a href="https://github.com/adam85sims/Sentinel">GitHub</a> · MIT License</p>
             </div>
         </div>
     </main>

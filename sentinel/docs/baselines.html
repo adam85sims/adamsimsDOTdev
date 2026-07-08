@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Baselines — Sentinel</title>
+    <meta name="description" content="Record, load, compare, and delete test baselines. Detect regressions between agent versions with baseline comparison and diff reports.">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23E95420'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='18' font-family='monospace'>S</text></svg>">
     <link rel="stylesheet" href="../css/docs.css">
 </head>
@@ -12,7 +13,10 @@
 <header class="header">
     <button class="mobile-toggle" aria-label="Menu">☰</button>
     <a href="/" class="header-brand">
-        <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="6" fill="#E95420"/><path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="6" fill="#E95420"/>
+            <path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
         <h1>Sentinel</h1>
     </a>
     <nav class="header-nav">
@@ -57,7 +61,7 @@
             <div class="nav-group">
                 <div class="nav-group-title">Advanced</div>
                 <a href="scenarios.html" class="nav-link">YAML Scenarios</a>
-                <a href="baselines.html" class="nav-link">Baselines</a>
+                <a href="baselines.html" class="nav-link active">Baselines</a>
                 <a href="ci-cd.html" class="nav-link">CI/CD Integration</a>
                 <a href="api.html" class="nav-link">API Reference</a>
             </div>
@@ -73,13 +77,184 @@
     <main class="main">
         <div class="page-header">
             <h1>Baselines</h1>
-            <p class="subtitle">Record and compare behavioral baselines.</p>
+            <p class="subtitle">Record, compare, and detect regressions in agent behavior.</p>
         </div>
 
         <div class="content">
+
+            <h2>What Are Baselines?</h2>
+            <p>A baseline is a snapshot of your agent's test results at a point in time. You record a baseline when everything passes, then compare future runs against it to detect regressions — scenarios that used to pass but now fail.</p>
+
+            <p>Baselines are stored as JSON files in your project under <code>.sentinel/baselines/</code>, making them committable to version control.</p>
+
+            <h2>Directory Structure</h2>
+            <pre><code>.sentinel/
+  baselines/
+    v1.2.3/
+      metadata.json          # Label, timestamp, git info, tags
+      results.json           # Serialized SentinelResult list
+    nightly-abc1234/
+      metadata.json
+      results.json</code></pre>
+
+            <p>Each baseline is a directory named by its label, containing two files:</p>
+            <ul>
+                <li><strong><code>metadata.json</code></strong> — label, timestamp, git SHA, branch, tags, scenario count, pass/fail counts</li>
+                <li><strong><code>results.json</code></strong> — full serialized test results with traces, assertions, and timing</li>
+            </ul>
+
+            <h2>BaselineMetadata</h2>
+            <p>Every baseline stores metadata alongside its results:</p>
+
+            <pre><code>@dataclass
+class BaselineMetadata:
+    label: str                    # Human-readable ID (e.g. "v1.2.3")
+    timestamp: float              # When it was recorded
+    git_sha: str = ""             # Git commit SHA (auto-detected)
+    git_branch: str = ""          # Git branch (auto-detected)
+    tags: List[str] = []          # Classification tags
+    description: str = ""         # What this baseline represents
+    scenario_count: int = 0       # Number of scenarios in the baseline
+    pass_count: int = 0           # Scenarios that passed
+    fail_count: int = 0           # Scenarios that failed</code></pre>
+
+            <h2>Recording a Baseline</h2>
+
+            <h3>With Python</h3>
+            <pre><code>from sentinel.baseline import record_baseline
+
+# After running your scenarios
+path = record_baseline(
+    results=results,              # List[SentinelResult]
+    label="v1.2.3",              # Human-readable label
+    tags=["release", "ci"],       # Optional classification tags
+    description="Release v1.2.3 — all tests passing",
+    git_sha="abc1234def5678",     # Auto-detected if omitted
+    git_branch="main",            # Auto-detected if omitted
+)
+print(f"Baseline recorded at {path}")</code></pre>
+
+            <h3>With the CLI</h3>
+            <p>First run your tests with JSON output, then pipe the results to record a baseline:</p>
+
+            <pre><code># Run tests and pipe to baseline
+sentinel run --all --json-output | sentinel baseline record v1.2.3
+
+# Or save to file first
+sentinel run --all --json-output > results.json
+sentinel baseline record v1.2.3 --path results.json
+
+# With tags and description
+sentinel baseline record v1.2.3 --tag release --tag ci --description "Pre-release snapshot"</code></pre>
+
             <div class="callout callout-info">
-                <strong>📖 Documentation in progress</strong>
-                This page is under construction. For now, check the <a href="quickstart.html">Quickstart</a> or <a href="https://github.com/adam85sims/Sentinel">GitHub README</a>.
+                <strong>ℹ️ Overwrite behavior</strong>
+                If a baseline with the same label already exists, it's overwritten. This is intentional — updating a baseline is an explicit action, not silent data loss.
+            </div>
+
+            <h2>Loading a Baseline</h2>
+
+            <pre><code>from sentinel.baseline import load_baseline
+
+metadata, results = load_baseline("v1.2.3")
+print(f"Recorded: {metadata.timestamp}")
+print(f"Git: {metadata.git_sha[:8]} ({metadata.git_branch})")
+print(f"Tags: {metadata.tags}")
+print(f"Results: {metadata.scenario_count} scenarios "
+      f"({metadata.pass_count} pass, {metadata.fail_count} fail)")
+
+# Use the results for comparison
+for r in results:
+    print(f"  [{r.passed}] {r.scenario_name}")</code></pre>
+
+            <h2>Listing Baselines</h2>
+
+            <pre><code>from sentinel.baseline import list_baselines
+
+labels = list_baselines()  # Newest first
+for label in labels:
+    print(f"  {label}")
+
+# CLI
+sentinel baseline list</code></pre>
+
+            <h2>Deleting a Baseline</h2>
+
+            <pre><code>from sentinel.baseline import delete_baseline
+
+deleted = delete_baseline("v1.2.3")
+print(f"Deleted: {deleted}")  # True if found, False if not
+
+# CLI
+sentinel baseline delete v1.2.3</code></pre>
+
+            <h2>Comparing Baselines</h2>
+            <p>Use <code>build_regression_report</code> to compare baseline results against current results and identify regressions, fixes, and new scenarios:</p>
+
+            <pre><code>from sentinel.baseline import load_baseline
+from sentinel.reporting import build_regression_report
+
+# Load baseline
+_, baseline_results = load_baseline("v1.2.3")
+
+# current_results from your latest test run
+report = build_regression_report(
+    baseline_results=baseline_results,
+    current_results=current_results,
+    baseline_label="v1.2.3",
+    current_label="current",
+)
+
+# Check for regressions
+print(f"Verdict: {report.verdict}")     # PASS, FAIL, or WARN
+print(f"Summary: {report.summary}")
+
+if report.has_regressions:
+    print("REGRESSIONS:")
+    for d in report.regressions:
+        print(f"  ✗ {d.scenario_name}: {d.new_failures}")
+
+if report.fixes:
+    print("FIXES:")
+    for d in report.fixes:
+        print(f"  ✓ {d.scenario_name}: {d.fixed_assertions}")</code></pre>
+
+            <h3>CLI Diff</h3>
+            <pre><code># Compare two baselines
+sentinel diff v1.2.3 v1.3.0
+
+# JSON output
+sentinel diff v1.2.3 v1.3.0 --json-output</code></pre>
+
+            <h2>Generating a Regression Report</h2>
+            <p>Generate an HTML or JUnit XML report from a baseline:</p>
+
+            <pre><code># CLI
+sentinel report --baseline v1.2.3 --format html --output ./reports
+sentinel report --baseline v1.2.3 --format junit --output ./reports
+sentinel report --baseline v1.2.3 --format both --output ./reports
+
+# Python
+from sentinel.reporting import generate_html_report, build_regression_report
+
+report = build_regression_report(baseline_results, current_results)
+html = generate_html_report(report)
+with open("regression-report.html", "w") as f:
+    f.write(html)</code></pre>
+
+            <div class="callout callout-success">
+                <strong>✅ Regression verdict</strong>
+                The <code>RegressionReport.verdict</code> property returns:
+                <ul style="margin-top: 8px;">
+                    <li><code>"PASS"</code> — no regressions, all scenarios still passing or new scenarios added</li>
+                    <li><code>"FAIL"</code> — regressions detected (scenarios that went from pass → fail)</li>
+                    <li><code>"WARN"</code> — no new regressions, but some scenarios were already failing</li>
+                </ul>
+            </div>
+
+            <!-- Footer -->
+            <div style="margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); color: var(--fg-muted); font-size: 0.875rem;">
+                <p>Built by <a href="/">Adam Sims</a> · <a href="https://github.com/adam85sims/Sentinel">GitHub</a> · MIT License</p>
             </div>
         </div>
     </main>

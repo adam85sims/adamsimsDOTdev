@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tool Failure Injection — Sentinel</title>
+    <meta name="description" content="Deep dive on ToolFailureInjector — simulate tool timeouts, errors, rate limits, malformed responses, and partial failures.">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23E95420'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='18' font-family='monospace'>S</text></svg>">
     <link rel="stylesheet" href="../css/docs.css">
 </head>
@@ -12,7 +13,10 @@
 <header class="header">
     <button class="mobile-toggle" aria-label="Menu">☰</button>
     <a href="/" class="header-brand">
-        <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="6" fill="#E95420"/><path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="6" fill="#E95420"/>
+            <path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
         <h1>Sentinel</h1>
     </a>
     <nav class="header-nav">
@@ -41,7 +45,7 @@
             <div class="nav-group">
                 <div class="nav-group-title">Chaos Engineering</div>
                 <a href="chaos.html" class="nav-link">Overview</a>
-                <a href="chaos-tool-failures.html" class="nav-link">Tool Failures</a>
+                <a href="chaos-tool-failures.html" class="nav-link active">Tool Failures</a>
                 <a href="chaos-context.html" class="nav-link">Context Degradation</a>
                 <a href="chaos-network.html" class="nav-link">Network Partitions</a>
                 <a href="chaos-memory.html" class="nav-link">Memory Pressure</a>
@@ -73,14 +77,375 @@
     <main class="main">
         <div class="page-header">
             <h1>Tool Failure Injection</h1>
-            <p class="subtitle">Simulate tool timeouts, errors, and rate limits.</p>
+            <p class="subtitle">Deep dive on ToolFailureInjector — simulate tool timeouts, errors, rate limits, and malformed responses.</p>
         </div>
 
         <div class="content">
+            <!-- Overview -->
+            <h2 id="overview">Overview</h2>
+            <p>The <code>ToolFailureInjector</code> is the most commonly used chaos injector in Sentinel. It intercepts calls to specific mock tools and injects realistic failures based on probability, step count, or both. This lets you verify that your agent handles degraded tools gracefully — retrying, falling back, or reporting errors — instead of silently producing wrong output.</p>
+
             <div class="callout callout-info">
-                <strong>📖 Documentation in progress</strong>
-                This page is under construction. For now, check the <a href="quickstart.html">Quickstart</a> or <a href="https://github.com/adam85sims/Sentinel">GitHub README</a>.
+                <strong>📖 Import path</strong>
+                <code>from sentinel.chaos import ToolFailureInjector</code>
             </div>
+
+            <!-- Failure Types -->
+            <h2 id="failure-types">Failure Types</h2>
+            <p>ToolFailureInjector supports five failure types via the <code>ToolFailureType</code> enum. Each maps to a specific exception class:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>HTTP Equivalent</th>
+                        <th>Exception</th>
+                        <th>Default Message</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>timeout</code></td>
+                        <td>408</td>
+                        <td><code>TimeoutError</code></td>
+                        <td>"Request timed out after 30s"</td>
+                    </tr>
+                    <tr>
+                        <td><code>error</code></td>
+                        <td>500</td>
+                        <td><code>MockToolError</code></td>
+                        <td>"Internal server error"</td>
+                    </tr>
+                    <tr>
+                        <td><code>rate_limit</code></td>
+                        <td>429</td>
+                        <td><code>RateLimitError</code></td>
+                        <td>"Rate limit exceeded (429)"</td>
+                    </tr>
+                    <tr>
+                        <td><code>malformed</code></td>
+                        <td>502</td>
+                        <td><code>MockToolError</code> (status 502)</td>
+                        <td>"Malformed response from API"</td>
+                    </tr>
+                    <tr>
+                        <td><code>partial</code></td>
+                        <td>200 (truncated)</td>
+                        <td><code>MockToolError</code> (status 200)</td>
+                        <td>"Partial response received"</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p>The <code>partial</code> type is particularly useful for testing agents that assume a 200 response means complete data. It raises a <code>MockToolError</code> with status 200 and a message indicating the connection was closed mid-transfer.</p>
+
+            <!-- Constructor -->
+            <h2 id="constructor">Constructor Parameters</h2>
+<pre><code>ToolFailureInjector(
+    tool_name: str,            # Name of the tool to target
+    failure_type: str = "error",  # Type of failure (see table above)
+    probability: float = 1.0,  # 0.0–1.0, chance of failure per call
+    seed: Optional[int] = None,# Random seed for deterministic injection
+    after_step: int = 0,       # Only inject after this many tool calls
+    error_message: Optional[str] = None,  # Custom error message
+)</code></pre>
+
+            <h3>Parameter Details</h3>
+            <ul>
+                <li><strong><code>tool_name</code></strong> — The name must match the <code>MockTool.name</code> attribute exactly. When the injector wraps a tool with a different name, calls pass through unchanged.</li>
+                <li><strong><code>failure_type</code></strong> — Accepts a string that maps to the <code>ToolFailureType</code> enum: <code>"timeout"</code>, <code>"error"</code>, <code>"rate_limit"</code>, <code>"malformed"</code>, or <code>"partial"</code>.</li>
+                <li><strong><code>probability</code></strong> — At <code>1.0</code> (default), every call to the targeted tool fails. At <code>0.1</code>, only 10% of calls fail. Combined with <code>seed</code>, this makes failure injection reproducible.</li>
+                <li><strong><code>after_step</code></strong> — Delays injection until the tool has been called this many times. Useful for testing agents that start clean but degrade over time.</li>
+                <li><strong><code>error_message</code></strong> — Overrides the default message for the failure type. Useful for testing agents that parse error messages.</li>
+            </ul>
+
+            <!-- The wrap() Method -->
+            <h2 id="wrap-method">The <code>wrap()</code> Method</h2>
+            <p>The <code>wrap()</code> method installs a <code>call_handler</code> on the MockTool so that every call to <code>tool(**kwargs)</code> goes through the injector's decision logic. The original tool is modified <strong>in place</strong> and also returned for convenience.</p>
+
+<pre><code>injector = ToolFailureInjector(
+    tool_name="search",
+    failure_type="timeout",
+    probability=0.5,
+    seed=42,
+)
+
+tool = MockTool("search", response="results")
+injector.wrap(tool)  # tool is now wrapped
+
+result = tool(q="query")  # may raise TimeoutError</code></pre>
+
+            <div class="callout callout-warning">
+                <strong>⚠️ In-place modification</strong>
+                <code>wrap()</code> modifies the tool's <code>call_handler</code> attribute. If you need to use the tool without injection later, create the tool before wrapping, or use a fresh instance.
+            </div>
+
+            <p>Under the hood, the wrapper:</p>
+            <ol>
+                <li>Records every call as a <code>MockToolCall</code> (with timing)</li>
+                <li>Checks if the tool name matches the target</li>
+                <li>Consults the RNG to decide whether to inject (respecting <code>after_step</code>)</li>
+                <li>If injecting: creates the configured exception, logs an <code>InjectionRecord</code>, and raises</li>
+                <li>If not injecting: delegates to the original tool response or response function</li>
+            </ol>
+
+            <!-- Probabilistic Injection -->
+            <h2 id="probabilistic-injection">Probabilistic Injection</h2>
+            <p>When <code>probability</code> is less than 1.0, each tool call independently rolls against the probability. This simulates intermittent failures — the kind agents face in production where APIs are flaky but not completely down.</p>
+
+<pre><code># 30% chance of failure on each call
+injector = ToolFailureInjector(
+    tool_name="database",
+    failure_type="error",
+    probability=0.3,
+    seed=42,
+)
+
+tool = MockTool("database", response={"rows": 100})
+injector.wrap(tool)
+
+# Simulate 100 tool calls
+results = []
+for i in range(100):
+    try:
+        result = tool(query=f"SELECT * FROM users_{i}")
+        results.append(("ok", result))
+    except MockToolError:
+        results.append(("failed", None))
+
+failures = [r for r in results if r[0] == "failed"]
+print(f"Failures: {len(failures)}/100")  # ~30 failures
+print(f"Injection count: {injector.injection_count}")</code></pre>
+
+            <!-- Deterministic Seeding -->
+            <h2 id="deterministic-seeding">Deterministic Seeding</h2>
+            <p>Passing a <code>seed</code> ensures the same sequence of random decisions every time. This is critical for CI/CD pipelines where tests must be reproducible across runs.</p>
+
+<pre><code># Two injectors with the same seed produce identical failure sequences
+injector_a = ToolFailureInjector(
+    tool_name="api",
+    failure_type="timeout",
+    probability=0.4,
+    seed=123,
+)
+
+injector_b = ToolFailureInjector(
+    tool_name="api",
+    failure_type="timeout",
+    probability=0.4,
+    seed=123,  # Same seed = same failure pattern
+)
+
+# Both will fail on exactly the same call indices
+# across any number of runs</code></pre>
+
+            <div class="callout callout-info">
+                <strong>💡 Best practice</strong>
+                Always set a seed in test code. Use a different seed per test case so each test gets its own unique but reproducible failure pattern.
+            </div>
+
+            <!-- Delayed Injection with after_step -->
+            <h2 id="delayed-injection">Delayed Injection with <code>after_step</code></h2>
+            <p>The <code>after_step</code> parameter lets the tool work normally for the first N calls, then begins injecting failures. This models scenarios where an agent starts with clean state but encounters failures as it performs more operations.</p>
+
+<pre><code># Tool works fine for first 5 calls, then 50% failure rate
+injector = ToolFailureInjector(
+    tool_name="search",
+    failure_type="rate_limit",
+    probability=0.5,
+    after_step=5,
+    seed=42,
+)
+
+tool = MockTool("search", response="results")
+injector.wrap(tool)
+
+# Calls 1–5: always succeed
+for i in range(5):
+    result = tool(q=f"query_{i}")  # No injection
+
+# Calls 6+: 50% chance of RateLimitError
+for i in range(5):
+    try:
+        tool(q=f"query_{i+5}")
+    except RateLimitError:
+        print(f"Call {i+6} hit rate limit")</code></pre>
+
+            <!-- Combining with ChaosBudget -->
+            <h2 id="chaos-budget">Combining with ChaosBudget</h2>
+            <p>The <code>ChaosBudget</code> class caps total failures across all injectors. Use it to ensure your test doesn't get overwhelmed by injection noise.</p>
+
+<pre><code>from sentinel.chaos import ChaosBudget, ToolFailureInjector
+
+# Create a budget: max 3 total failures across all tools
+chaos = (ChaosBudget(max_failures=3)
+    .add(ToolFailureInjector(
+        tool_name="search",
+        failure_type="timeout",
+        probability=0.5,
+        seed=42,
+    ))
+    .add(ToolFailureInjector(
+        tool_name="database",
+        failure_type="error",
+        probability=0.8,
+        seed=42,
+    )))
+
+# Each injector has its own RNG, but the budget ensures
+# at most 3 failures total before the budget is exhausted
+print(f"Can inject: {chaos.can_inject()}")   # True
+print(f"Remaining: {chaos.remaining}")        # 3
+print(f"Exhausted: {chaos.exhausted}")        # False
+
+# After running the agent, check what happened
+print(f"Total injected: {chaos.total_injected}")
+print(f"Budget summary: {chaos.summary()}")
+
+# You can also inspect records grouped by type or failure
+print(f"Records by type: {chaos.records_by_type}")
+print(f"Records by failure: {chaos.records_by_failure}")</code></pre>
+
+            <div class="callout callout-warning">
+                <strong>⚠️ Budget exhaustion</strong>
+                Once <code>chaos.exhausted</code> is True, no more failures are injected regardless of individual injector settings. Call <code>chaos.reset()</code> to start a new test run with a fresh budget.
+            </div>
+
+            <!-- The make_validator Pattern -->
+            <h2 id="make-validator">The <code>make_validator()</code> Pattern</h2>
+            <p>ToolFailureInjector supports the <code>make_validator()</code> pattern for use with Sentinel's <code>assert_no_silent_failure</code> assertion. This creates a validator function that checks whether the agent's output is still valid despite the injected failures.</p>
+
+<pre><code>from sentinel.chaos import ToolFailureInjector
+from sentinel.assertions import assert_no_silent_failure
+
+injector = ToolFailureInjector(
+    tool_name="search",
+    failure_type="timeout",
+    probability=0.5,
+    seed=42,
+)
+
+tool = MockTool("search", response="results")
+injector.wrap(tool)
+
+# Run your agent with the wrapped tool
+output = run_agent(tool=tool)
+
+# Create a validator from the injector
+validator = injector.make_validator()
+
+# Assert the agent didn't silently fail
+assert_no_silent_failure(output, validator=validator)
+
+# You can also inspect injection records for debugging
+for record in injector.records:
+    print(f"Injected {record.failure_type} at call {record.call_index}: {record.message}")</code></pre>
+
+            <h3>Properties for Post-Test Inspection</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Property</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>injection_count</code></td>
+                        <td><code>int</code></td>
+                        <td>Total failures injected so far</td>
+                    </tr>
+                    <tr>
+                        <td><code>records</code></td>
+                        <td><code>List[InjectionRecord]</code></td>
+                        <td>Full history of injections with timestamps, types, and messages</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Complete Example -->
+            <h2 id="complete-example">Complete Example</h2>
+            <p>Here's a full test that validates agent resilience to tool failures:</p>
+
+<pre><code>import pytest
+from sentinel.chaos import ChaosBudget, ToolFailureInjector
+from sentinel.env import MockTool
+from sentinel.assertions import assert_no_silent_failure, assert_agent_recovers
+
+def test_agent_handles_search_failures():
+    """Agent should retry or fall back when search fails."""
+    # Set up tools
+    search_tool = MockTool("search", response="results")
+    db_tool = MockTool("database", response={"rows": 10})
+
+    # Configure chaos
+    chaos = (ChaosBudget(max_failures=3)
+        .add(ToolFailureInjector(
+            tool_name="search",
+            failure_type="timeout",
+            probability=0.6,
+            seed=42,
+        )))
+
+    # Wrap tools
+    chaos.get_injectors()[0].wrap(search_tool)
+
+    # Run agent
+    output = run_research_agent(search=search_tool, database=db_tool)
+
+    # Assert resilience
+    assert output is not None, "Agent produced no output under failure"
+    assert output != "", "Agent produced empty output under failure"
+
+    # Verify the agent handled errors (not just lucky with non-failing calls)
+    if chaos.total_injected > 0:
+        assert_agent_recovers(output, chaos.records)
+
+    print(f"Handled {chaos.total_injected} failures successfully")</code></pre>
+
+            <!-- API Reference -->
+            <h2 id="api-reference">Full API Reference</h2>
+<pre><code>class ToolFailureInjector:
+    """Injects failures into specific mock tool calls."""
+
+    # Constructor
+    def __init__(
+        self,
+        tool_name: str,
+        failure_type: str = "error",
+        probability: float = 1.0,
+        seed: Optional[int] = None,
+        after_step: int = 0,
+        error_message: Optional[str] = None,
+    ) -> None: ...
+
+    # Properties
+    injection_count: int          # Number of failures injected
+    records: List[InjectionRecord] # Injection history
+
+    # Methods
+    def wrap(self, tool: MockTool) -> MockTool:
+        """Wrap a MockTool with failure injection."""
+
+    def inject(
+        self,
+        tool: MockTool,
+        arguments: Optional[Dict[str, Any]] = None,
+    ) -> bool:
+        """Manually trigger injection check."""
+
+    def reset(self) -> None:
+        """Reset injection state (clear history)."""
+
+    # Internal
+    def _should_inject(self) -> bool: ...
+    def _create_failure(self, arguments: Dict[str, Any]) -> Exception: ...
+    def _default_message(self) -> str: ...</code></pre>
+        </div>
+
+        <div style="margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); color: var(--fg-muted); font-size: 0.875rem;">
+            <p>Built by <a href="/">Adam Sims</a> · <a href="https://github.com/adam85sims/Sentinel">GitHub</a> · MIT License</p>
         </div>
     </main>
 </div>

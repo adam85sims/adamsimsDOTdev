@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OpenAI SDK Adapter — Sentinel</title>
+    <meta name="description" content="Test OpenAI Agents SDK with Sentinel's mock tools, traces, and chaos injection.">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23E95420'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='18' font-family='monospace'>S</text></svg>">
     <link rel="stylesheet" href="../css/docs.css">
 </head>
@@ -12,7 +13,10 @@
 <header class="header">
     <button class="mobile-toggle" aria-label="Menu">☰</button>
     <a href="/" class="header-brand">
-        <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="6" fill="#E95420"/><path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="6" fill="#E95420"/>
+            <path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
         <h1>Sentinel</h1>
     </a>
     <nav class="header-nav">
@@ -51,7 +55,7 @@
                 <div class="nav-group-title">Framework Adapters</div>
                 <a href="adapters-langchain.html" class="nav-link">LangChain</a>
                 <a href="adapters-crewai.html" class="nav-link">CrewAI</a>
-                <a href="adapters-openai.html" class="nav-link">OpenAI SDK</a>
+                <a href="adapters-openai.html" class="nav-link active">OpenAI SDK</a>
                 <a href="adapters-custom.html" class="nav-link">Custom Adapters</a>
             </div>
             <div class="nav-group">
@@ -73,13 +77,164 @@
     <main class="main">
         <div class="page-header">
             <h1>OpenAI SDK Adapter</h1>
-            <p class="subtitle">Test OpenAI Agents SDK with Sentinel.</p>
+            <p class="subtitle">Test OpenAI Agents SDK with Sentinel's mock tools, traces, and chaos injection.</p>
         </div>
 
         <div class="content">
-            <div class="callout callout-info">
-                <strong>📖 Documentation in progress</strong>
-                This page is under construction. For now, check the <a href="quickstart.html">Quickstart</a> or <a href="https://github.com/adam85sims/Sentinel">GitHub README</a>.
+
+            <h2>Installation</h2>
+            <p>Install the OpenAI SDK adapter as an optional extra:</p>
+            <pre><code>pip install sentinel[openai]</code></pre>
+            <p>This pulls in <code>openai-agents</code> (≥ 0.1) for <code>FunctionTool</code>, <code>function_tool</code>, and <code>RunContextWrapper</code>. Without the extra, the adapter duck-types the <code>FunctionTool</code> interface so it works for standalone mock-only testing.</p>
+
+            <h2>wrap_openai_agent()</h2>
+            <p>The primary entry point. <code>wrap_openai_agent()</code> wraps an OpenAI Agents SDK <code>Agent</code> with sentinel tool mocking, creating an <code>OpenAIAgentWrapper</code> with adapters ready for wiring:</p>
+
+            <pre><code>from sentinel.adapters.openai import wrap_openai_agent
+from sentinel.env import MockTool
+from sentinel.models import AgentTrace
+
+trace = AgentTrace()
+
+# Define mock responses for every tool
+tool_map = {
+    "search": MockTool("search", response={"results": ["doc1"]}),
+    "email": MockTool("email", response="sent"),
+    "database": MockTool("database", response={"rows": 42}),
+}
+
+# Wrap the agent
+wrapper = wrap_openai_agent(
+    agent=my_openai_agent,
+    tool_map=tool_map,
+    trace=trace,
+)
+
+# Wire mock tools into the agent's tools list
+my_openai_agent.tools = wrapper.get_tool_list()</code></pre>
+
+            <h3>Parameters</h3>
+            <ul>
+                <li><code>agent</code> — An OpenAI Agents SDK <code>Agent</code> instance.</li>
+                <li><code>tool_map</code> — <code>Dict[str, MockTool]</code> mapping tool names to mock implementations.</li>
+                <li><code>trace</code> — An <code>AgentTrace</code> to record all calls into.</li>
+            </ul>
+
+            <h2>SentinelFunctionTool</h2>
+            <p>The adapter class that wraps a <code>MockTool</code> as an OpenAI Agents SDK function tool. Each entry in the <code>tool_map</code> becomes one of these.</p>
+
+            <pre><code>from sentinel.adapters.openai import SentinelFunctionTool
+from sentinel.env import MockTool
+from sentinel.models import AgentTrace
+
+trace = AgentTrace()
+
+# Create a function tool from a mock
+tool = SentinelFunctionTool(
+    mock=MockTool("search", response=SEARCH_RESULTS),
+    trace=trace,
+    name="search",
+    description="Search the knowledge base",
+)
+
+# Invoke with a JSON string (OpenAI SDK convention)
+result = tool.invoke('{"query": "refund policy"}')
+
+# Or invoke with a dict
+result = tool.invoke({"query": "refund policy"})
+
+# Or call directly
+result = tool(query="refund policy")</code></pre>
+
+            <h3>Key Features</h3>
+            <ul>
+                <li><strong>JSON schema support</strong> — <code>params_json_schema</code> property provides a JSON schema for the tool's input parameters, matching the SDK's <code>FunctionTool</code> interface.</li>
+                <li><strong>Async support</strong> — <code>async_invoke()</code> for async runners (delegates to the sync mock internally).</li>
+                <li><strong>Flexible input</strong> — Accepts JSON strings, dicts, or <code>None</code>.</li>
+            </ul>
+
+            <h2>Tool Map Usage</h2>
+            <p>The <code>tool_map</code> is a <code>Dict[str, MockTool]</code>. Each key must match the tool name your OpenAI agent expects:</p>
+
+            <pre><code>tool_map = {
+    "search": MockTool("search", response={"results": ["doc1"]}),
+    "email": MockTool("email", response="sent"),
+}
+
+# The wrapper creates SentinelFunctionTool for each entry
+wrapper = wrap_openai_agent(
+    agent=my_agent,
+    tool_map=tool_map,
+    trace=trace,
+)
+
+# Access individual adapters
+search_adapter = wrapper.get_adapter("search")
+print(f"Search calls: {search_adapter.mock.call_count}")
+
+# Get all tools as a list for wiring into the agent
+my_agent.tools = wrapper.get_tool_list()</code></pre>
+
+            <h2>Full Example with OpenAI Agents SDK</h2>
+            <p>Here's a complete example integrating with the OpenAI Agents SDK:</p>
+
+            <pre><code>from agents import Agent, Runner
+from sentinel.adapters.openai import wrap_openai_agent
+from sentinel.chaos import inject_failures
+from sentinel.env import MockTool
+from sentinel.models import AgentTrace
+from sentinel.assertions import assert_tool_called, assert_no_tool_errors
+
+trace = AgentTrace()
+
+# 1. Define mock tools
+search_mock = MockTool("search", response={"results": ["Sentinel docs"]})
+
+# 2. Optionally inject chaos
+inject_failures(search_mock, failure_rate=0.2, error_type="TimeoutError")
+
+# 3. Create the OpenAI agent
+agent = Agent(
+    name="Research Assistant",
+    instructions="Search for information and summarize findings.",
+    tools=[],  # Will be replaced by mock tools
+)
+
+# 4. Wrap with sentinel
+wrapper = wrap_openai_agent(
+    agent=agent,
+    tool_map={"search": search_mock},
+    trace=trace,
+)
+
+# 5. Wire in the mock tools
+agent.tools = wrapper.get_tool_list()
+
+# 6. Run the agent
+result = Runner.run_sync(agent, "Find information about Sentinel testing")
+
+# 7. Assert on behavior
+assert_tool_called(trace, "search")
+assert_no_tool_errors(trace)
+
+print(f"Agent output: {result.final_output}")
+print(f"Trace calls: {trace.total_tool_calls}")</code></pre>
+
+            <div class="callout callout-success">
+                <strong>✅ Key Insight</strong>
+                The adapter replaces only the tool execution layer — the agent's LLM reasoning loop, prompt handling, and output formatting all remain untouched. This means your tests exercise the agent's actual decision-making logic.
+            </div>
+
+            <h2>Next Steps</h2>
+            <ul>
+                <li><a href="adapters-langchain.html">LangChain Adapter</a> — test LangChain agents with the same mock tool layer</li>
+                <li><a href="adapters-crewai.html">CrewAI Adapter</a> — test CrewAI crews</li>
+                <li><a href="adapters-custom.html">Custom Adapters</a> — write adapters for any agent framework</li>
+                <li><a href="chaos.html">Chaos Engineering</a> — inject failures to test resilience</li>
+            </ul>
+
+            <div style="margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); color: var(--fg-muted); font-size: 0.875rem;">
+                <p>Built by <a href="/">Adam Sims</a> · <a href="https://github.com/adam85sims/Sentinel">GitHub</a> · MIT License</p>
             </div>
         </div>
     </main>

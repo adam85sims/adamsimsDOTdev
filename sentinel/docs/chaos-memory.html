@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Memory Pressure — Sentinel</title>
+    <meta name="description" content="Deep dive on MemoryPressure — simulate context window exhaustion, OOM kills, and GC pauses for AI agents.">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23E95420'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='18' font-family='monospace'>S</text></svg>">
     <link rel="stylesheet" href="../css/docs.css">
 </head>
@@ -12,7 +13,10 @@
 <header class="header">
     <button class="mobile-toggle" aria-label="Menu">☰</button>
     <a href="/" class="header-brand">
-        <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="6" fill="#E95420"/><path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="6" fill="#E95420"/>
+            <path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
         <h1>Sentinel</h1>
     </a>
     <nav class="header-nav">
@@ -44,7 +48,7 @@
                 <a href="chaos-tool-failures.html" class="nav-link">Tool Failures</a>
                 <a href="chaos-context.html" class="nav-link">Context Degradation</a>
                 <a href="chaos-network.html" class="nav-link">Network Partitions</a>
-                <a href="chaos-memory.html" class="nav-link">Memory Pressure</a>
+                <a href="chaos-memory.html" class="nav-link active">Memory Pressure</a>
                 <a href="chaos-presets.html" class="nav-link">Presets</a>
             </div>
             <div class="nav-group">
@@ -73,14 +77,342 @@
     <main class="main">
         <div class="page-header">
             <h1>Memory Pressure</h1>
-            <p class="subtitle">Test context window exhaustion and OOM scenarios.</p>
+            <p class="subtitle">Deep dive on MemoryPressure — simulate context window exhaustion, OOM kills, and GC pauses.</p>
         </div>
 
         <div class="content">
+            <!-- Overview -->
+            <h2 id="overview">Overview</h2>
+            <p>AI agents operating in production face memory pressure when their context windows fill up. Unlike <code>ContextDegradation</code> (which models gradual erosion), <code>MemoryPressure</code> models <strong>sudden pressure events</strong>: OOM kills, context window hard limits, eviction storms, and garbage collection pauses. This is the injector for testing what happens when the system runs out of room.</p>
+
             <div class="callout callout-info">
-                <strong>📖 Documentation in progress</strong>
-                This page is under construction. For now, check the <a href="quickstart.html">Quickstart</a> or <a href="https://github.com/adam85sims/Sentinel">GitHub README</a>.
+                <strong>📖 Import path</strong>
+                <code>from sentinel.chaos import MemoryPressure</code>
             </div>
+
+            <p>MemoryPressure tracks token usage in real time. As you call <code>simulate_token_usage()</code> to add tokens, the injector monitors whether the context exceeds its limits and triggers evictions or OOM kills accordingly.</p>
+
+            <!-- Constructor -->
+            <h2 id="constructor">Constructor Parameters</h2>
+<pre><code>MemoryPressure(
+    max_context_tokens: int = 4096,     # Hard limit on context window
+    pressure_threshold: float = 0.8,     # When pressure starts (0.0–1.0)
+    eviction_strategy: str = "fifo",     # "fifo", "priority", or "random"
+    gc_pause_ms: float = 0.0,           # Simulated GC pause in ms
+    oom_probability: float = 0.0,        # OOM kill chance when over limit
+    seed: Optional[int] = None,          # Random seed for determinism
+)</code></pre>
+
+            <h3>Parameter Details</h3>
+            <ul>
+                <li><strong><code>max_context_tokens</code></strong> — The hard ceiling. When usage exceeds this, eviction or OOM is triggered. Default <code>4096</code> models a small context window; set to <code>128000</code> for GPT-4 class models.</li>
+                <li><strong><code>pressure_threshold</code></strong> — The percentage of <code>max_context_tokens</code> at which the <code>under_pressure</code> flag becomes True and GC pauses begin. Default <code>0.8</code> = 80%.</li>
+                <li><strong><code>eviction_strategy</code></strong> — How tokens are removed when over limit:
+                    <ul>
+                        <li><code>"fifo"</code> — Remove oldest 20% of context (default)</li>
+                        <li><code>"priority"</code> — Remove least important 30%</li>
+                        <li><code>"random"</code> — Remove random 15–25%</li>
+                    </ul>
+                </li>
+                <li><strong><code>gc_pause_ms</code></strong> — Simulated garbage collection pause in milliseconds. Only fires when <code>under_pressure</code> is True. Set to <code>0</code> to disable.</li>
+                <li><strong><code>oom_probability</code></strong> — When context exceeds the limit, this is the probability of an OOM kill (context reset to 0) instead of a graceful eviction. Default <code>0.0</code> = always evict.</li>
+            </ul>
+
+            <!-- Usage Tracking -->
+            <h2 id="usage-tracking">Token Usage Tracking</h2>
+
+            <h3>Properties</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Property</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>current_usage</code></td>
+                        <td><code>int</code></td>
+                        <td>Current context usage in tokens</td>
+                    </tr>
+                    <tr>
+                        <td><code>usage_percentage</code></td>
+                        <td><code>float</code></td>
+                        <td>Usage as fraction (0.0–1.0)</td>
+                    </tr>
+                    <tr>
+                        <td><code>under_pressure</code></td>
+                        <td><code>bool</code></td>
+                        <td>True when usage ≥ <code>pressure_threshold</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+<pre><code>pressure = MemoryPressure(
+    max_context_tokens=4096,
+    pressure_threshold=0.8,
+)
+
+print(pressure.current_usage)      # 0
+print(pressure.usage_percentage)   # 0.0
+print(pressure.under_pressure)     # False
+
+# Simulate adding tokens
+result = pressure.simulate_token_usage(2000)
+print(pressure.current_usage)      # 2000
+print(pressure.usage_percentage)   # 0.488 (2000/4096)
+print(pressure.under_pressure)     # False (48.8% < 80%)
+
+result = pressure.simulate_token_usage(1500)
+print(pressure.current_usage)      # 3500
+print(pressure.usage_percentage)   # 0.854 (3500/4096)
+print(pressure.under_pressure)     # True (85.4% >= 80%)</code></pre>
+
+            <!-- simulate_token_usage() -->
+            <h2 id="simulate-token-usage">The <code>simulate_token_usage()</code> Method</h2>
+            <p>Call this method to simulate adding tokens to the context window. It returns <code>None</code> on success, or an error message if eviction or OOM occurred:</p>
+
+<pre><code>result = pressure.simulate_token_usage(tokens: int) -> Optional[str]
+# Returns None if successful
+# Returns "OOM kill: ..." if OOM killed the context
+# Returns "Context eviction: ..." if tokens were evicted</code></pre>
+
+            <h3>Behavior Flow</h3>
+            <ol>
+                <li>Adds <code>tokens</code> to <code>current_usage</code></li>
+                <li>If <code>current_usage &gt; max_context_tokens</code>:
+                    <ul>
+                        <li>Roll against <code>oom_probability</code> — if triggered, reset usage to 0 and return OOM message</li>
+                        <li>Otherwise, evict tokens per <code>eviction_strategy</code> and return eviction message</li>
+                    </ul>
+                </li>
+                <li>If <code>under_pressure</code> and <code>gc_pause_ms &gt; 0</code>, sleep for the GC pause duration</li>
+            </ol>
+
+            <!-- OOM Simulation -->
+            <h2 id="oom-simulation">OOM Kill Simulation</h2>
+            <p>When context exceeds the limit and the OOM roll succeeds, the context window is reset to 0 — simulating an out-of-memory kill that wipes the agent's state:</p>
+
+<pre><code>pressure = MemoryPressure(
+    max_context_tokens=1000,
+    pressure_threshold=0.8,
+    oom_probability=0.5,  # 50% chance of OOM vs eviction
+    seed=42,
+)
+
+# Fill context past the limit
+pressure.simulate_token_usage(800)   # 800/1000 = 80%, under_pressure = True
+result = pressure.simulate_token_usage(400)  # 1200/1000, over limit!
+
+if result and "OOM" in result:
+    print(f"OOM kill! Context wiped: {result}")
+    print(f"Usage after OOM: {pressure.current_usage}")  # 0
+else:
+    print(f"Evicted instead: {result}")
+    print(f"Usage after eviction: {pressure.current_usage}")  # Reduced</code></pre>
+
+            <div class="callout callout-warning">
+                <strong>⚠️ OOM resets context to 0</strong>
+                After an OOM kill, <code>current_usage</code> drops to 0. The agent loses all context — it must rebuild from scratch. This is the most severe outcome and tests whether your agent can recover from catastrophic memory failure.
+            </div>
+
+            <!-- GC Pressure -->
+            <h2 id="gc-pressure">Garbage Collection Pressure</h2>
+            <p>When <code>gc_pause_ms &gt; 0</code> and the context is <code>under_pressure</code>, each <code>simulate_token_usage()</code> call introduces a real sleep to simulate GC pauses. This models the performance degradation that occurs when a system is under memory pressure and spends cycles on garbage collection.</p>
+
+<pre><code>import time
+
+pressure = MemoryPressure(
+    max_context_tokens=4096,
+    pressure_threshold=0.7,
+    gc_pause_ms=200,  # 200ms GC pauses
+    seed=42,
+)
+
+# Below threshold: no GC pauses
+start = time.time()
+pressure.simulate_token_usage(2000)  # 48.8%, no pause
+elapsed = time.time() - start
+print(f"No pressure: {elapsed:.3f}s")  # ~0.001s
+
+# Above threshold: GC pauses
+pressure.simulate_token_usage(1000)  # 73.2%, no pause yet
+start = time.time()
+pressure.simulate_token_usage(100)   # 75.6%, still below 70%
+elapsed = time.time() - start
+print(f"Just below threshold: {elapsed:.3f}s")
+
+start = time.time()
+pressure.simulate_token_usage(200)   # 80.5%, now under pressure
+elapsed = time.time() - start
+print(f"Under pressure: {elapsed:.3f}s")  # ~0.2s (GC pause)</code></pre>
+
+            <!-- Eviction Strategies -->
+            <h2 id="eviction-strategies">Eviction Strategies</h2>
+            <p>When context exceeds the limit and OOM doesn't trigger, tokens are evicted according to the configured strategy:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Strategy</th>
+                        <th>Eviction Rate</th>
+                        <th>Behavior</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>fifo</code></td>
+                        <td>20% of usage</td>
+                        <td>Remove oldest messages first — preserves recent context</td>
+                    </tr>
+                    <tr>
+                        <td><code>priority</code></td>
+                        <td>30% of usage</td>
+                        <td>Remove least important messages — more aggressive but smarter</td>
+                    </tr>
+                    <tr>
+                        <td><code>random</code></td>
+                        <td>15–25% of usage</td>
+                        <td>Random selection — unpredictable, tests agent robustness</td>
+                    </tr>
+                </tbody>
+            </table>
+
+<pre><code># FIFO: deterministic, removes oldest 20%
+pressure_fifo = MemoryPressure(
+    max_context_tokens=1000,
+    eviction_strategy="fifo",
+)
+
+# Priority: aggressive, removes 30%
+pressure_priority = MemoryPressure(
+    max_context_tokens=1000,
+    eviction_strategy="priority",
+)
+
+# Random: variable, 15-25%
+pressure_random = MemoryPressure(
+    max_context_tokens=1000,
+    eviction_strategy="random",
+    seed=42,
+)</code></pre>
+
+            <!-- Wrapping Tools -->
+            <h2 id="wrapping-tools">Wrapping Tools</h2>
+            <p>Use <code>wrap()</code> to install memory pressure simulation on a MockTool. When the context is over limit, the wrapped tool may raise an OOM error or report an eviction:</p>
+
+<pre><code>from sentinel.chaos import MemoryPressure
+from sentinel.env import MockTool
+
+pressure = MemoryPressure(
+    max_context_tokens=4096,
+    pressure_threshold=0.8,
+    oom_probability=0.1,
+    seed=42,
+)
+
+tool = MockTool("agent_memory", response="context_data")
+wrapped = pressure.wrap(tool)
+
+# Simulate context filling up
+for i in range(20):
+    pressure.simulate_token_usage(300)
+
+    try:
+        result = wrapped(query=f"step_{i}")
+        print(f"Step {i}: {result}")
+    except MockToolError as e:
+        print(f"Step {i}: Memory pressure failure — {e}")</code></pre>
+
+            <!-- Complete Example -->
+            <h2 id="complete-example">Complete Test Example</h2>
+<pre><code>import pytest
+from sentinel.chaos import MemoryPressure
+from sentinel.env import MockTool
+from sentinel.assertions import assert_no_silent_failure
+
+def test_agent_handles_memory_exhaustion():
+    """Agent should recover when context window fills up."""
+    pressure = MemoryPressure(
+        max_context_tokens=4096,
+        pressure_threshold=0.7,
+        eviction_strategy="fifo",
+        gc_pause_ms=100,
+        oom_probability=0.2,
+        seed=42,
+    )
+
+    tool = MockTool("search", response="results")
+    wrapped = pressure.wrap(tool)
+
+    # Simulate a long conversation that fills context
+    outputs = []
+    for step in range(20):
+        tokens = 250 + (step * 50)  # Increasing token usage per step
+        pressure.simulate_token_usage(tokens)
+
+        try:
+            result = run_agent_step(tool=wrapped, step=step)
+            outputs.append(result)
+        except Exception as e:
+            outputs.append(None)
+
+    # Agent should have produced some output
+    valid_outputs = [o for o in outputs if o is not None]
+    assert len(valid_outputs) > 0, "Agent produced no output under memory pressure"
+
+    # Check final state
+    print(f"Final usage: {pressure.current_usage}/{pressure.max_context_tokens}")
+    print(f"Usage %: {pressure.usage_percentage:.1%}")
+    print(f"Under pressure: {pressure.under_pressure}")
+    print(f"Injections: {pressure.injection_count}")
+
+    # Inspect injection records
+    for record in pressure.records:
+        print(f"  {record.failure_type}: {record.message}")</code></pre>
+
+            <!-- Full API -->
+            <h2 id="api-reference">Full API Reference</h2>
+<pre><code>class MemoryPressure:
+    """Simulates memory pressure and context window exhaustion."""
+
+    # Constructor
+    def __init__(
+        self,
+        max_context_tokens: int = 4096,
+        pressure_threshold: float = 0.8,
+        eviction_strategy: str = "fifo",
+        gc_pause_ms: float = 0.0,
+        oom_probability: float = 0.0,
+        seed: Optional[int] = None,
+    ) -> None: ...
+
+    # Properties
+    injection_count: int          # Total pressure events
+    current_usage: int            # Current token usage
+    usage_percentage: float       # Usage as fraction (0.0–1.0)
+    under_pressure: bool          # True when usage >= threshold
+
+    # Core method
+    def simulate_token_usage(self, tokens: int) -> Optional[str]:
+        """Add tokens to context. Returns None on success, error on OOM/eviction."""
+
+    # Wrapping
+    def wrap(self, tool: MockTool) -> ChaosToolWrapper:
+        """Wrap a MockTool with memory pressure simulation."""
+
+    # State management
+    def reset(self) -> None:
+        """Reset all counters and usage."""
+
+    def make_validator(self) -> Callable[[Any], bool]:
+        """Create a validator for assert_no_silent_failure."""
+</code></pre>
+        </div>
+
+        <div style="margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); color: var(--fg-muted); font-size: 0.875rem;">
+            <p>Built by <a href="/">Adam Sims</a> · <a href="https://github.com/adam85sims/Sentinel">GitHub</a> · MIT License</p>
         </div>
     </main>
 </div>

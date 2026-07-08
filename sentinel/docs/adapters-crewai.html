@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CrewAI Adapter — Sentinel</title>
+    <meta name="description" content="Test CrewAI crews with Sentinel's mock tools, traces, and chaos injection.">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23E95420'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='18' font-family='monospace'>S</text></svg>">
     <link rel="stylesheet" href="../css/docs.css">
 </head>
@@ -12,7 +13,10 @@
 <header class="header">
     <button class="mobile-toggle" aria-label="Menu">☰</button>
     <a href="/" class="header-brand">
-        <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="6" fill="#E95420"/><path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="6" fill="#E95420"/>
+            <path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
         <h1>Sentinel</h1>
     </a>
     <nav class="header-nav">
@@ -50,7 +54,7 @@
             <div class="nav-group">
                 <div class="nav-group-title">Framework Adapters</div>
                 <a href="adapters-langchain.html" class="nav-link">LangChain</a>
-                <a href="adapters-crewai.html" class="nav-link">CrewAI</a>
+                <a href="adapters-crewai.html" class="nav-link active">CrewAI</a>
                 <a href="adapters-openai.html" class="nav-link">OpenAI SDK</a>
                 <a href="adapters-custom.html" class="nav-link">Custom Adapters</a>
             </div>
@@ -73,13 +77,156 @@
     <main class="main">
         <div class="page-header">
             <h1>CrewAI Adapter</h1>
-            <p class="subtitle">Test CrewAI crews with Sentinel.</p>
+            <p class="subtitle">Test CrewAI crews with Sentinel's mock tools, traces, and chaos injection.</p>
         </div>
 
         <div class="content">
+
+            <h2>Installation</h2>
+            <p>Install the CrewAI adapter as an optional extra:</p>
+            <pre><code>pip install sentinel[crewai]</code></pre>
+            <p>This pulls in <code>crewai</code> (≥ 0.80) for <code>BaseTool</code> and the <code>@tool</code> decorator. Without the extra, the adapter duck-types enough of CrewAI's interface to work for standalone mock-only testing.</p>
+
+            <h2>SentinelCrewTool</h2>
+            <p>The core building block. <code>SentinelCrewTool</code> wraps a Sentinel <code>MockTool</code> as a CrewAI-compatible tool that exposes <code>run(**kwargs)</code> — CrewAI's <code>BaseTool</code> invocation protocol.</p>
+
+            <pre><code>from sentinel.adapters.crewai import SentinelCrewTool
+from sentinel.env import MockTool
+from sentinel.models import AgentTrace
+
+trace = AgentTrace()
+
+# Create a CrewAI-compatible tool from a mock
+adapter = SentinelCrewTool(
+    mock=MockTool("search", response={"results": ["doc1", "doc2"]}),
+    trace=trace,
+    name="search",
+    description="Search the knowledge base",
+)
+
+# Use it like a CrewAI BaseTool — call .run()
+result = adapter.run(query="refund policy")
+print(f"Mock response: {result}")
+
+# Also works with _run() (some CrewAI patterns call this directly)
+result = adapter._run(query="return policy")</code></pre>
+
+            <h3>Parameters</h3>
+            <ul>
+                <li><code>mock</code> — A <code>sentinel.env.MockTool</code> providing canned responses and error injection.</li>
+                <li><code>trace</code> — An <code>AgentTrace</code> that records every call with arguments, results, duration, and errors.</li>
+                <li><code>name</code> — (Optional) Tool name. Defaults to <code>mock.name</code>.</li>
+                <li><code>description</code> — (Optional) Tool description shown to the LLM. Defaults to <code>"Sentinel mock tool: {name}"</code>.</li>
+            </ul>
+
+            <h2>Wrapping an Entire Crew</h2>
+            <p>Use <code>wrap_crew_agent()</code> to wrap a CrewAI <code>Crew</code> at once. This creates a <code>CrewAgentWrapper</code> with adapters ready for wiring into your agents:</p>
+
+            <pre><code>from sentinel.adapters.crewai import wrap_crew_agent
+from sentinel.env import MockTool
+from sentinel.models import AgentTrace
+
+trace = AgentTrace()
+
+# Define mock responses for every tool
+tool_map = {
+    "search": MockTool("search", response={"results": ["doc1"]}),
+    "email": MockTool("email", response="sent"),
+    "database": MockTool("database", response={"rows": 42}),
+}
+
+# Wrap the crew
+wrapper = wrap_crew_agent(
+    crew=my_crew,
+    tool_map=tool_map,
+    trace=trace,
+)
+
+# Wire the mock tools into each agent's tool list
+for agent in my_crew.agents:
+    agent.tools = wrapper.get_tool_list()
+
+# Run the crew as usual — tools are intercepted
+result = my_crew.kickoff()
+
+# Inspect what happened
+for name, adapter in wrapper.adapters.items():
+    print(f"{name}: called {adapter.mock.call_count} times")
+print(f"Total trace calls: {trace.total_tool_calls}")</code></pre>
+
+            <h3>Tool Map</h3>
+            <p>The <code>tool_map</code> is a <code>Dict[str, MockTool]</code> mapping tool names to their mock implementations. Every key must match the tool name your CrewAI agents expect. The wrapper creates a <code>SentinelCrewTool</code> for each entry.</p>
+
+            <h2>Accessing Individual Adapters</h2>
+            <p>The <code>CrewAgentWrapper</code> provides several ways to inspect individual tool adapters:</p>
+
+            <pre><code># Get a specific adapter by name
+search_adapter = wrapper.get_adapter("search")
+print(f"Search calls: {search_adapter.mock.call_count}")
+
+# Get the underlying MockTool for a name
+search_mock = wrapper.get_mock("search")
+print(f"Search responses: {search_mock.responses}")
+
+# Get all adapters as a dict
+all_adapters = wrapper.adapters  # Dict[str, SentinelCrewTool]
+
+# Get all adapters as a list (for passing to Agent.tools directly)
+tool_list = wrapper.get_tool_list()  # List[SentinelCrewTool]</code></pre>
+
+            <h2>Example with Chaos Injection</h2>
+            <p>Combine the CrewAI adapter with Sentinel's chaos layer to test crew resilience under failure:</p>
+
+            <pre><code>from sentinel.adapters.crewai import wrap_crew_agent
+from sentinel.chaos import inject_failures
+from sentinel.env import MockTool
+from sentinel.models import AgentTrace
+
+trace = AgentTrace()
+
+# Create a mock tool, then inject chaos
+search_mock = MockTool("search", response={"results": ["doc1"]})
+inject_failures(search_mock, failure_rate=0.3, error_type="TimeoutError")
+
+email_mock = MockTool("email", response="sent")
+inject_failures(email_mock, failure_rate=0.1, error_type="ConnectionError")
+
+# Wrap crew with chaotic mocks
+wrapper = wrap_crew_agent(
+    crew=my_crew,
+    tool_map={"search": search_mock, "email": email_mock},
+    trace=trace,
+)
+
+# Wire into agents
+for agent in my_crew.agents:
+    agent.tools = wrapper.get_tool_list()
+
+# Run the crew — agents must handle tool failures gracefully
+result = my_crew.kickoff()
+
+# Analyze results
+errors = [tc for tc in trace.tool_calls if tc.error]
+print(f"Total calls: {trace.total_tool_calls}")
+print(f"Errors: {len(errors)}")
+for err in errors:
+    print(f"  {err.tool_name}: {err.error}")</code></pre>
+
             <div class="callout callout-info">
-                <strong>📖 Documentation in progress</strong>
-                This page is under construction. For now, check the <a href="quickstart.html">Quickstart</a> or <a href="https://github.com/adam85sims/Sentinel">GitHub README</a>.
+                <strong>📖 Learn more</strong>
+                See <a href="chaos-tool-failures.html">Tool Failures</a> for all failure injection options (latency, error types, partial responses) and <a href="traces.html">Agent Traces</a> for inspecting recorded calls.
+            </div>
+
+            <h2>Next Steps</h2>
+            <ul>
+                <li><a href="adapters-langchain.html">LangChain Adapter</a> — test LangChain agents with the same mock tool layer</li>
+                <li><a href="adapters-openai.html">OpenAI SDK Adapter</a> — test OpenAI Agents SDK tools</li>
+                <li><a href="adapters-custom.html">Custom Adapters</a> — write adapters for any agent framework</li>
+                <li><a href="chaos.html">Chaos Engineering</a> — inject failures to test resilience</li>
+            </ul>
+
+            <div style="margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); color: var(--fg-muted); font-size: 0.875rem;">
+                <p>Built by <a href="/">Adam Sims</a> · <a href="https://github.com/adam85sims/Sentinel">GitHub</a> · MIT License</p>
             </div>
         </div>
     </main>

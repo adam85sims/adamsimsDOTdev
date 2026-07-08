@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Your First Test — Sentinel</title>
+    <meta name="description" content="Walk through writing a complete behavioral test with Sentinel's pytest decorator, mock environments, assertions, and chaos injection.">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23E95420'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='18' font-family='monospace'>S</text></svg>">
     <link rel="stylesheet" href="../css/docs.css">
 </head>
@@ -12,7 +13,10 @@
 <header class="header">
     <button class="mobile-toggle" aria-label="Menu">☰</button>
     <a href="/" class="header-brand">
-        <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="6" fill="#E95420"/><path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="6" fill="#E95420"/>
+            <path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
         <h1>Sentinel</h1>
     </a>
     <nav class="header-nav">
@@ -30,7 +34,7 @@
                 <div class="nav-group-title">Getting Started</div>
                 <a href="quickstart.html" class="nav-link">Quickstart</a>
                 <a href="installation.html" class="nav-link">Installation</a>
-                <a href="first-test.html" class="nav-link">Your First Test</a>
+                <a href="first-test.html" class="nav-link active">Your First Test</a>
             </div>
             <div class="nav-group">
                 <div class="nav-group-title">Core Concepts</div>
@@ -73,13 +77,196 @@
     <main class="main">
         <div class="page-header">
             <h1>Your First Test</h1>
-            <p class="subtitle">Write your first behavioral test in 5 minutes.</p>
+            <p class="subtitle">Write a complete behavioral test in 5 minutes.</p>
         </div>
 
         <div class="content">
+
+            <h2>Overview</h2>
+            <p>This guide walks through writing a complete Sentinel test from scratch. You'll create a mock environment, run your agent against it, and verify its behavior with assertions. By the end you'll know two approaches: the <strong>pytest decorator</strong> (recommended) and the <strong>manual</strong> approach.</p>
+
+            <h2>Using the <code>@sentinel_test</code> Decorator</h2>
+            <p>The <code>@sentinel_test</code> decorator is the recommended way to write tests. It handles environment creation, trace injection, and chaos wiring automatically.</p>
+
+            <h3>Step 1: Set Up the Environment</h3>
+            <p>Use <code>EnvironmentBuilder</code> to create a controlled test environment with mock tools:</p>
+
+            <pre><code>from sentinel.env import EnvironmentBuilder
+
+env = (EnvironmentBuilder()
+    .mock_tool("search", response={"results": ["Refund Policy", "Shipping Info"]})
+    .mock_tool("database", response={"user_id": 42, "status": "active"})
+    .build())</code></pre>
+
+            <h3>Step 2: Write the Test</h3>
+            <p>Decorate your test function with <code>@sentinel_test</code>. The decorator injects a <code>trace</code> (AgentTrace) and <code>env</code> (Environment) into the test function:</p>
+
+            <pre><code>import pytest
+from sentinel.runner import sentinel_test
+from sentinel.env import EnvironmentBuilder
+from sentinel.assertions import assert_tool_called, assert_no_tool_errors
+
+@sentinel_test(
+    env=(EnvironmentBuilder()
+        .mock_tool("search", response={"results": ["Refund Policy", "Shipping Info"]})
+        .build()),
+    task="Search for refund policy",
+)
+def test_search_agent(trace, env):
+    # Your agent code here — run against the mock environment
+    # For example, call the search tool and record behavior on the trace
+    result = env.tools["search"](query="refund policy")
+
+    # Add steps and tool calls to the trace
+    from sentinel.models import Step, StepAction, ToolCall
+    trace.add_step(Step(
+        step_id=1,
+        action=StepAction.TOOL_CALL,
+        input={"query": "refund policy"},
+        output=result,
+        tool_calls=[ToolCall(
+            tool_name="search",
+            arguments={"query": "refund policy"},
+            result=result,
+            duration_ms=12,
+        )],
+    ))
+
+    # Assert behaviors
+    assert_tool_called(trace, "search")
+    assert_no_tool_errors(trace)</code></pre>
+
+            <h3>Step 3: Run with pytest</h3>
+            <pre><code>pytest test_search_agent.py -v</code></pre>
+
+            <p>You'll see pytest pick up the test normally, with the decorator handling all Sentinel plumbing behind the scenes.</p>
+
             <div class="callout callout-info">
-                <strong>📖 Documentation in progress</strong>
-                This page is under construction. For now, check the <a href="quickstart.html">Quickstart</a> or <a href="https://github.com/adam85sims/Sentinel">GitHub README</a>.
+                <strong>ℹ️ The decorator's job</strong>
+                <code>@sentinel_test</code> creates the <code>AgentTrace</code>, builds the environment (from <code>EnvironmentBuilder</code> or a pre-built <code>Environment</code>), and injects them as kwargs to your test. You just write assertions.
+            </div>
+
+            <h2>Adding Chaos Injection</h2>
+            <p>Pass a <code>ChaosBudget</code> to the decorator to inject failures into your test environment automatically:</p>
+
+            <pre><code>import pytest
+from sentinel.runner import sentinel_test
+from sentinel.env import EnvironmentBuilder
+from sentinel.chaos import ChaosBudget, tool_failure
+from sentinel.assertions import assert_tool_called
+
+@sentinel_test(
+    env=(EnvironmentBuilder()
+        .mock_tool("search", response={"results": ["Refund Policy"]})
+        .build()),
+    chaos=ChaosBudget([
+        tool_failure("search", failure_rate=0.3),
+    ]),
+    task="Search with 30% failure rate",
+)
+def test_search_handles_failures(trace, env):
+    # The search tool now fails randomly ~30% of the time
+    # Your agent should handle retries or graceful degradation
+    try:
+        result = env.tools["search"](query="refund policy")
+    except Exception:
+        pass  # Agent should handle this
+
+    # At minimum, the tool was attempted
+    assert True  # Add real assertions about recovery behavior</code></pre>
+
+            <div class="callout callout-warning">
+                <strong>💡 Chaos tip</strong>
+                Use chaos to verify your agent doesn't crash when tools fail. Good assertions for chaos tests check that the agent <em>recovers</em> or <em>degrades gracefully</em> rather than throwing uncaught exceptions.
+            </div>
+
+            <h2>The Manual Approach</h2>
+            <p>If you prefer full control (or aren't using pytest), build the environment, create the trace, and run assertions manually:</p>
+
+            <pre><code>from sentinel.env import EnvironmentBuilder
+from sentinel.models import AgentTrace, Step, StepAction, ToolCall
+from sentinel.assertions import assert_tool_called, assert_no_tool_errors
+
+# 1. Build environment
+env = (EnvironmentBuilder()
+    .mock_tool("search", response={"results": ["Refund Policy"]})
+    .mock_tool("database", response={"user_id": 42, "status": "active"})
+    .build())
+
+# 2. Create trace
+trace = AgentTrace()
+
+# 3. Run your agent (this is your actual agent code)
+def my_agent(task, env, trace):
+    """Simulate agent that searches and queries the database."""
+    search_result = env.tools["search"](query=task)
+    db_result = env.tools["database"](user_id=42)
+
+    trace.add_step(Step(
+        step_id=1,
+        action=StepAction.TOOL_CALL,
+        input={"query": task},
+        output=search_result,
+        tool_calls=[ToolCall(
+            tool_name="search",
+            arguments={"query": task},
+            result=search_result,
+            duration_ms=50,
+        )],
+    ))
+    trace.add_step(Step(
+        step_id=2,
+        action=StepAction.TOOL_CALL,
+        input={"user_id": 42},
+        output=db_result,
+        tool_calls=[ToolCall(
+            tool_name="database",
+            arguments={"user_id": 42},
+            result=db_result,
+            duration_ms=30,
+        )],
+    ))
+    trace.finish()
+
+my_agent("find refund policy", env, trace)
+
+# 4. Assert behaviors
+assert_tool_called(trace, "search")
+assert_tool_called(trace, "database")
+assert_no_tool_errors(trace)
+
+# 5. Inspect trace
+print(f"Steps: {trace.total_steps}")
+print(f"Tool calls: {trace.total_tool_calls}")
+print(f"Duration: {trace.total_duration_ms:.1f}ms")
+print(f"Tools called: {trace.tool_names_called}")</code></pre>
+
+            <h2>Running with the CLI</h2>
+            <p>You can also run tests via the Sentinel CLI instead of pytest:</p>
+
+            <pre><code># Run a specific scenario file
+sentinel run --path my_scenario.yaml
+
+# Run all discovered scenarios
+sentinel run --all
+
+# Run with verbose output
+sentinel run --scenario refund-test --verbose</code></pre>
+
+            <p>See <a href="scenarios.html">YAML Scenarios</a> for defining tests declaratively, or <a href="ci-cd.html">CI/CD Integration</a> for running in pipelines.</p>
+
+            <h2>Key Concepts Recap</h2>
+            <ul>
+                <li><strong><code>EnvironmentBuilder</code></strong> — creates a controlled testing environment with mock tools, APIs, and databases.</li>
+                <li><strong><code>AgentTrace</code></strong> — the flight recorder that captures every tool call, step, and error.</li>
+                <li><strong><code>@sentinel_test</code></strong> — pytest decorator that wires everything together automatically.</li>
+                <li><strong>Assertions</strong> — 20+ assertions to verify tool usage, error handling, governance compliance, and performance.</li>
+                <li><strong>Chaos injection</strong> — randomly fail tools, degrade context, or simulate network issues to test resilience.</li>
+            </ul>
+
+            <!-- Footer -->
+            <div style="margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); color: var(--fg-muted); font-size: 0.875rem;">
+                <p>Built by <a href="/">Adam Sims</a> · <a href="https://github.com/adam85sims/Sentinel">GitHub</a> · MIT License</p>
             </div>
         </div>
     </main>

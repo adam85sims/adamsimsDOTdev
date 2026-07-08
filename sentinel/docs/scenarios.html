@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YAML Scenarios — Sentinel</title>
+    <meta name="description" content="Define agent behavioral test scenarios declaratively in YAML files. Run with the CLI or ScenarioRunner API.">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23E95420'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='18' font-family='monospace'>S</text></svg>">
     <link rel="stylesheet" href="../css/docs.css">
 </head>
@@ -12,7 +13,10 @@
 <header class="header">
     <button class="mobile-toggle" aria-label="Menu">☰</button>
     <a href="/" class="header-brand">
-        <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="6" fill="#E95420"/><path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="6" fill="#E95420"/>
+            <path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
         <h1>Sentinel</h1>
     </a>
     <nav class="header-nav">
@@ -56,7 +60,7 @@
             </div>
             <div class="nav-group">
                 <div class="nav-group-title">Advanced</div>
-                <a href="scenarios.html" class="nav-link">YAML Scenarios</a>
+                <a href="scenarios.html" class="nav-link active">YAML Scenarios</a>
                 <a href="baselines.html" class="nav-link">Baselines</a>
                 <a href="ci-cd.html" class="nav-link">CI/CD Integration</a>
                 <a href="api.html" class="nav-link">API Reference</a>
@@ -73,13 +77,177 @@
     <main class="main">
         <div class="page-header">
             <h1>YAML Scenarios</h1>
-            <p class="subtitle">Define test scenarios in YAML files.</p>
+            <p class="subtitle">Define test scenarios declaratively in YAML files.</p>
         </div>
 
         <div class="content">
+
+            <h2>Overview</h2>
+            <p>YAML Scenarios let you define behavioral tests without writing Python. A scenario file specifies the task, mock tools, chaos injection, and assertions — and Sentinel runs everything for you.</p>
+
+            <p>This is especially useful for:</p>
+            <ul>
+                <li>Non-Python team members who want to contribute tests</li>
+                <li>CI/CD pipelines where you want a declarative test suite</li>
+                <li>Regression testing with baselines (see <a href="baselines.html">Baselines</a>)</li>
+            </ul>
+
+            <h2>The SentinelScenario Dataclass</h2>
+            <p>Under the hood, a YAML file maps to a <code>SentinelScenario</code> (also aliased as <code>TestScenario</code>):</p>
+
+            <pre><code>@dataclass
+class SentinelScenario:
+    id: str                                    # Unique scenario ID
+    name: str                                  # Human-readable name
+    description: str = ""                      # What this test verifies
+    agent_config: Optional[AgentConfig] = None  # How to instantiate the agent
+    environment: Optional[Environment] = None   # Pre-built environment (overrides env_config)
+    env_config: Dict[str, Any] = {}            # Tool mock configuration
+    chaos_config: Dict[str, Any] = {}          # Chaos injection rules
+    task: str = ""                             # Task description for the agent
+    assertions: List[Callable] = []            # Assertion functions to run
+    timeout_seconds: int = 30                  # Max execution time
+    tags: List[str] = []                       # Classification tags</code></pre>
+
+            <h2>YAML Example</h2>
+            <p>Here's a complete scenario file:</p>
+
+            <pre><code># scenarios/refund_agent.yaml
+id: refund-agent-001
+name: "Refund agent handles timeout gracefully"
+description: "Verify the refund agent retries on tool timeout and doesn't crash"
+task: "Process a refund for order #12345"
+
+# Mock tool configuration
+env_config:
+  tools:
+    search:
+      response:
+        results:
+          - "Refund Policy: 30-day window"
+      latency_ms: 50
+    database:
+      response:
+        user_id: 42
+        status: active
+        refund_eligible: true
+    payment_api:
+      response:
+        refund_id: "REF-999"
+        status: processed
+
+# Chaos injection
+chaos_config:
+  tool_failures:
+    - tool: search
+      failure_rate: 0.3
+      error_type: timeout
+
+# Assertions (function names from sentinel.assertions)
+assertions:
+  - assert_tool_called
+  - assert_no_tool_errors
+  - assert_max_steps
+  - assert_tool_called_in_order
+
+# Agent configuration
+agent_config:
+  model: gpt-4
+  tools:
+    - search
+    - database
+    - payment_api
+
+# Metadata
+tags:
+  - refund
+  - resilience
+  - critical
+timeout_seconds: 60</code></pre>
+
+            <h2>Running Scenarios with the CLI</h2>
+
+            <h3>Run a specific scenario file</h3>
+            <pre><code>sentinel run --path scenarios/refund_agent.yaml</code></pre>
+
+            <h3>Run with verbose output</h3>
+            <pre><code>sentinel run --path scenarios/refund_agent.yaml --verbose</code></pre>
+
+            <h3>List all discovered scenarios</h3>
+            <pre><code>sentinel list</code></pre>
+            <p>This discovers all scenario files in your project and prints their IDs, names, and tags.</p>
+
+            <h3>Show details for a specific scenario</h3>
+            <pre><code>sentinel info refund-agent-001</code></pre>
+            <p>Prints the full scenario config: task, tags, timeout, assertion count, and more.</p>
+
+            <h3>Run all scenarios</h3>
+            <pre><code>sentinel run --all --verbose</code></pre>
+
+            <h3>JSON output for CI</h3>
+            <pre><code>sentinel run --all --json-output</code></pre>
+            <p>Outputs structured JSON with pass/fail status, assertion results, and timing — perfect for piping into other tools or recording as a baseline.</p>
+
+            <h2>The ScenarioRunner API</h2>
+            <p>For programmatic use, use <code>ScenarioRunner</code> directly:</p>
+
+            <pre><code>from sentinel.runner import ScenarioRunner, SentinelScenario, AgentConfig
+
+# Define a scenario in Python
+scenario = SentinelScenario(
+    id="search-basic-001",
+    name="Agent searches and returns results",
+    task="Search for return policy information",
+    env_config={
+        "tools": {
+            "search": {
+                "response": {"results": ["Return policy: 30 days"]},
+                "latency_ms": 25,
+            }
+        }
+    },
+    assertions=[],  # Add assertion callables here
+    tags=["search", "smoke"],
+)
+
+# Create a runner and execute
+runner = ScenarioRunner()
+result = runner.run(scenario, agent_fn=my_agent_function)
+
+print(f"Passed: {result.passed}")
+print(f"Duration: {result.duration_ms:.0f}ms")
+print(f"Summary: {result.summary}")</code></pre>
+
+            <h3>Running Multiple Scenarios</h3>
+            <pre><code>scenarios = [scenario_1, scenario_2, scenario_3]
+runner = ScenarioRunner()
+results = runner.run_batch(scenarios, agent_fn=my_agent_function)
+
+for r in results:
+    print(r.summary)</code></pre>
+
             <div class="callout callout-info">
-                <strong>📖 Documentation in progress</strong>
-                This page is under construction. For now, check the <a href="quickstart.html">Quickstart</a> or <a href="https://github.com/adam85sims/Sentinel">GitHub README</a>.
+                <strong>ℹ️ Agent function signature</strong>
+                The <code>agent_fn</code> must accept three keyword arguments: <code>task</code> (str), <code>env</code> (Environment), and <code>trace</code> (AgentTrace). Your agent receives the mock environment and a trace to record its actions against.
+            </div>
+
+            <h2>Environment Config Format</h2>
+            <p>The <code>env_config.tools</code> section maps tool names to their mock configuration:</p>
+
+            <table>
+                <thead>
+                    <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>response</code></td><td>any</td><td>Static response returned by the tool</td></tr>
+                    <tr><td><code>latency_ms</code></td><td>float</td><td>Simulated response latency in milliseconds</td></tr>
+                    <tr><td><code>error_probability</code></td><td>float</td><td>Probability of random errors (0.0–1.0)</td></tr>
+                </tbody>
+            </table>
+
+            <!-- Footer -->
+            <div style="margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); color: var(--fg-muted); font-size: 0.875rem;">
+                <p>Built by <a href="/">Adam Sims</a> · <a href="https://github.com/adam85sims/Sentinel">GitHub</a> · MIT License</p>
             </div>
         </div>
     </main>
