@@ -21,12 +21,13 @@ const COMMANDS = {
       "available commands:",
       "  help              show this message",
       "  ls                list available 'files' (cv sections)",
-      "  cat <file>        read a file (e.g. cat resume, cat projects)",
-      "  open <app>        open a window (resume|projects|skills|about|contact|terminal)",
+      "  cat <file>        read a file (e.g. cat resume, cat sentinel)",
+      "  open <app>        open a window/tab (resume|projects|sentinel|skills|about|contact|terminal)",
       "  whoami            short bio",
       "  contact           show contact details",
       "  resume            alias for 'open resume'",
       "  projects          alias for 'open projects'",
+      "  sentinel          alias for 'open sentinel'",
       "  skills            alias for 'open skills'",
       "  about             alias for 'open about'",
       "  date              current date/time",
@@ -44,9 +45,9 @@ const COMMANDS = {
       "cv/",
       "  resume.json   experience.json   education.json",
       "  skills.json   projects.json     contact.json",
-      "  README.md",
+      "  sentinel.json README.md",
       "tools/",
-      "  resume.app   projects.app   skills.app",
+      "  resume.app   projects.app   sentinel.app   skills.app",
       "  about.app    contact.app    terminal.app",
     ].join("\n"),
   },
@@ -63,6 +64,10 @@ const COMMANDS = {
         case "projects":
         case "projects.json":
           return { kind: "info", text: renderProjectsText(cv) };
+        case "sentinel":
+        case "sentinel.json":
+        case "sentinel.md":
+          return { kind: "info", text: renderSentinelText(cv) };
         case "skills":
         case "skills.json":
           return { kind: "info", text: renderSkillsText(cv) };
@@ -90,6 +95,10 @@ const COMMANDS = {
       const target = args[0].toLowerCase();
       const app = APPS.find(a => a.id === target);
       if (!app) return { kind: "error", text: `open: '${target}' is not a registered app` };
+      if (app.isExternal) {
+        window.open(app.url, "_blank");
+        return { kind: "success", text: `opened ${app.title} in a new tab` };
+      }
       WM.open({
         id: app.id,
         title: app.title,
@@ -112,6 +121,7 @@ const COMMANDS = {
   resume: { desc: "open resume window", fn: (args, ctx) => COMMANDS.open.fn(["resume"], ctx) },
   projects: { desc: "open projects window", fn: (args, ctx) => COMMANDS.open.fn(["projects"], ctx) },
   skills: { desc: "open skills window", fn: (args, ctx) => COMMANDS.open.fn(["skills"], ctx) },
+  sentinel: { desc: "open sentinel docs (new tab)", fn: (args, ctx) => COMMANDS.open.fn(["sentinel"], ctx) },
   about: { desc: "open about window", fn: (args, ctx) => COMMANDS.open.fn(["about"], ctx) },
   date: { desc: "current date/time", fn: () => ({ kind: "info", text: new Date().toString() }) },
   uname: {
@@ -154,6 +164,20 @@ function renderProjectsText(cv) {
     ...(pr.highlights || []).map(h => `  - ${h}`),
     pr.url ? `  url: ${pr.url}` : null,
   ].filter(Boolean).join("\n")).join("\n\n");
+}
+function renderSentinelText(cv) {
+  const proj = cv.projects.find(p => p.id === "sentinel");
+  if (!proj) return "Sentinel: Agent behavioral testing platform with chaos injection.";
+  return [
+    `${proj.name} — ${proj.tagline}`,
+    `Status: ${proj.status}`,
+    `Stack:  ${(proj.stack || []).join(", ")}`,
+    "",
+    "Highlights:",
+    ...(proj.highlights || []).map(h => `  - ${h}`),
+    "",
+    `Documentation: ${proj.url}`
+  ].join("\n");
 }
 function renderSkillsText(cv) {
   return Object.entries(cv.skills).map(([cat, items]) => `${cat}:\n${items.map(i => `  - ${i}`).join("\n")}`).join("\n\n");

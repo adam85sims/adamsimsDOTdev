@@ -59,6 +59,25 @@
       ]
     },
     {
+      "id": "sentinel",
+      "name": "Sentinel",
+      "tagline": "Agent behavioral testing platform with chaos injection",
+      "status": "Released · Open Source",
+      "stack": [
+        "Python",
+        "Chaos Engineering",
+        "LangChain",
+        "CrewAI",
+        "OpenAI SDK"
+      ],
+      "url": "sentinel/index.html",
+      "highlights": [
+        "Behavioral testing framework simulating tool failures, context degradation, and network partitions for AI agents.",
+        "Zero external dependencies for core, with adapters for LangChain, CrewAI, and OpenAI SDK.",
+        "Built-in assertion library with 20+ assertions validating state consistency, tool usage, and governance policies."
+      ]
+    },
+    {
       "id": "phaser-nge",
       "name": "Phaser-NGE",
       "tagline": "Visual novel / narrative game engine on Phaser 3",
@@ -148,7 +167,8 @@
   ],
   "skills": {
     "Agentic AI & LLMs": [
-      "Agentic workflow design (Claude Code, OpenCode, Hermes, custom MCP servers)",
+      "Agentic workflow design (Claude Code, OpenCode, Hermes, Sentinel, custom MCP servers)",
+      "Agent behavioral testing & chaos engineering (author of Sentinel)",
       "MCP (Model Context Protocol) — server authoring, tool registration, native clients",
       "LLM routing & cost optimisation (Headroom, prompt caching, provider failover)",
       "Skills / plugin architectures (composable, discoverable, versioned)",
@@ -216,7 +236,7 @@
         "Skills & Plugin Architectures",
         "LLM Routing & Cost Optimisation"
       ],
-      "proof": "Hermes Agent daily driver, Agent-Frameworks governance library, Headroom routing proxy.",
+      "proof": "Hermes Agent daily driver, Sentinel agent testing platform, Headroom routing proxy.",
       "pricing": {
         "model": "Fixed project",
         "gbp": "£3,000 — £25,000",
@@ -234,9 +254,10 @@
         "Compliance Gate Architecture",
         "Risk Frameworks for AI Systems",
         "AI Policy & Documentation",
-        "Bias & Alignment Auditing"
+        "Bias & Alignment Auditing",
+        "Agent Behavioral & Chaos Testing (Sentinel)"
       ],
-      "proof": "5 years in UK regulated public service + caught my own agent fabricating compliance in the Hermes Autonomy Experiment.",
+      "proof": "5 years in UK regulated public service + author of Sentinel behavioral testing framework + caught my own agent fabricating compliance in the Hermes Autonomy Experiment.",
       "pricing": {
         "model": "Monthly retainer",
         "gbp": "£2,000 — £5,000/mo",

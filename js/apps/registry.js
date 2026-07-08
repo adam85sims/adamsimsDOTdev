@@ -20,6 +20,7 @@ const ICONS = {
   research: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>',
   services: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/><circle cx="12" cy="12" r="3"/></svg>',
   print: '<svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 5V2h8v3"/><rect x="2" y="5" width="12" height="8" rx="1"/><rect x="4" y="9" width="8" height="5"/></svg>',
+  sentinel: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6"><rect width="18" height="18" x="3" y="3" rx="4" fill="#E95420" stroke="none"/><text x="12" y="16.5" text-anchor="middle" fill="white" font-size="13" font-family="monospace" font-weight="bold">S</text></svg>',
 };
 
 // Each app may declare extra window-header buttons (left of min/max/close).
@@ -45,6 +46,7 @@ export const APPS = [
   },
   { id: "projects", title: "Projects", icon: ICONS.projects, defaultSize: { w: 860, h: 600 }, onOpen: (cv) => renderProjects(cv), showOnDesktop: true, showInDock: true },
   { id: "research", title: "Research", icon: ICONS.research, defaultSize: { w: 860, h: 600 }, onOpen: (cv) => renderResearch(cv), showOnDesktop: true, showInDock: true },
+  { id: "sentinel", title: "Sentinel Docs", icon: ICONS.sentinel, isExternal: true, url: "sentinel/index.html", showOnDesktop: true, showInDock: false },
   { id: "skills", title: "Skills", icon: ICONS.skills, defaultSize: { w: 760, h: 560 }, onOpen: (cv) => renderSkills(cv), showOnDesktop: false, showInDock: true },
   { id: "about", title: "About", icon: ICONS.about, defaultSize: { w: 560, h: 480 }, onOpen: (cv) => renderAbout(cv), showOnDesktop: true, showInDock: false },
   { id: "contact", title: "Contact", icon: ICONS.contact, defaultSize: { w: 520, h: 440 }, onOpen: (cv) => renderContact(cv), showOnDesktop: false, showInDock: true },

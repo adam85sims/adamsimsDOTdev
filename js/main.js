@@ -95,6 +95,10 @@ function buildDesktopIcons(cv) {
 }
 
 function openApp(app, cv) {
+  if (app.isExternal) {
+    window.open(app.url, "_blank");
+    return;
+  }
   WM.open({
     id: app.id,
     title: app.title,
