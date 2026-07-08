@@ -3,33 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API Reference — Sentinel</title>
+    <title>Sentinel — API Reference</title>
+    <meta name="description" content="Complete API reference for Sentinel: environment mocking, agent traces, behavioral assertions, chaos injection, test runner, reporting, and baselines.">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23E95420'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='18' font-family='monospace'>S</text></svg>">
     <link rel="stylesheet" href="../css/docs.css">
+    <style>
+        .api-section { margin-bottom: 48px; }
+        .api-section h2 {
+            font-size: 1.5rem;
+            color: var(--fg-accent);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+            margin-bottom: 16px;
+        }
+        .api-section h2 code {
+            color: var(--fg-accent);
+            background: none;
+            font-size: 1.4rem;
+        }
+        .api-section h3 {
+            font-size: 1.15rem;
+            color: var(--fg-primary);
+            margin-top: 24px;
+            margin-bottom: 8px;
+        }
+        .api-section h3 code {
+            color: var(--info);
+        }
+        .api-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+        }
+        .api-card .sig {
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            color: var(--fg-primary);
+            background: var(--bg-code);
+            padding: 10px 14px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            margin-bottom: 8px;
+        }
+        .api-card .sig .kw { color: var(--info); }
+        .api-card .sig .cls { color: var(--success); }
+        .api-card .sig .fn { color: #d2a8ff; }
+        .api-card .sig .param { color: var(--fg-secondary); }
+        .api-card .sig .type { color: var(--warning); }
+        .api-card .sig .str { color: #a5d6ff; }
+        .api-card .sig .none { color: var(--fg-muted); }
+        .api-card .sig .int { color: #79c0ff; }
+        .api-card .sig .float { color: #79c0ff; }
+        .api-card .sig .bool { color: var(--info); }
+        .api-card p {
+            color: var(--fg-secondary);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin: 0;
+        }
+        .api-card p code {
+            color: var(--info);
+            background: var(--bg-code);
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 0.85rem;
+        }
+        .api-card .props {
+            margin-top: 8px;
+            font-size: 0.85rem;
+        }
+        .api-card .props dt {
+            color: var(--fg-primary);
+            font-family: var(--font-mono);
+            font-weight: 600;
+        }
+        .api-card .props dd {
+            color: var(--fg-secondary);
+            margin-left: 16px;
+            margin-bottom: 4px;
+        }
+        .enum-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 8px 0 16px;
+            font-size: 0.85rem;
+        }
+        .enum-table th {
+            text-align: left;
+            color: var(--fg-accent);
+            font-weight: 600;
+            padding: 6px 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        .enum-table td {
+            padding: 6px 10px;
+            border-bottom: 1px solid var(--border);
+            color: var(--fg-secondary);
+        }
+        .enum-table td:first-child {
+            font-family: var(--font-mono);
+            color: var(--fg-primary);
+        }
+        .callout {
+            background: var(--bg-card);
+            border-left: 3px solid var(--info);
+            padding: 12px 16px;
+            border-radius: 0 6px 6px 0;
+            margin: 16px 0;
+            font-size: 0.9rem;
+            color: var(--fg-secondary);
+        }
+        .callout strong { color: var(--fg-primary); }
+        .toc {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 16px 20px;
+            margin-bottom: 32px;
+        }
+        .toc h3 {
+            font-size: 1rem;
+            color: var(--fg-primary);
+            margin-bottom: 8px;
+        }
+        .toc ul {
+            list-style: none;
+            columns: 2;
+            column-gap: 24px;
+            margin: 0;
+        }
+        .toc li {
+            margin-bottom: 4px;
+        }
+        .toc a {
+            color: var(--info);
+            text-decoration: none;
+            font-size: 0.85rem;
+        }
+        .toc a:hover { text-decoration: underline; }
+        .api-group-label {
+            display: inline-block;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--fg-muted);
+            margin-bottom: 4px;
+        }
+    </style>
 </head>
 <body>
 
+<!-- Header -->
 <header class="header">
     <button class="mobile-toggle" aria-label="Menu">☰</button>
     <a href="/" class="header-brand">
-        <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="6" fill="#E95420"/><path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="6" fill="#E95420"/>
+            <path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
         <h1>Sentinel</h1>
     </a>
     <nav class="header-nav">
         <a href="quickstart.html">Quickstart</a>
         <a href="chaos.html">Chaos</a>
-        <a href="api.html" class="active">API</a>
+        <a href="api.html">API</a>
         <a href="https://github.com/adam85sims/Sentinel" target="_blank">GitHub</a>
     </nav>
 </header>
 
 <div class="layout">
+    <!-- Sidebar -->
     <aside class="sidebar">
         <nav>
             <div class="nav-group">
                 <div class="nav-group-title">Getting Started</div>
                 <a href="quickstart.html" class="nav-link">Quickstart</a>
                 <a href="installation.html" class="nav-link">Installation</a>
+                <a href="first-test.html" class="nav-link">Your First Test</a>
             </div>
             <div class="nav-group">
                 <div class="nav-group-title">Core Concepts</div>
@@ -40,193 +194,1064 @@
             <div class="nav-group">
                 <div class="nav-group-title">Chaos Engineering</div>
                 <a href="chaos.html" class="nav-link">Overview</a>
+                <a href="chaos-tool-failures.html" class="nav-link">Tool Failures</a>
+                <a href="chaos-context.html" class="nav-link">Context Degradation</a>
+                <a href="chaos-network.html" class="nav-link">Network Partitions</a>
+                <a href="chaos-memory.html" class="nav-link">Memory Pressure</a>
                 <a href="chaos-presets.html" class="nav-link">Presets</a>
             </div>
             <div class="nav-group">
+                <div class="nav-group-title">Framework Adapters</div>
+                <a href="adapters-langchain.html" class="nav-link">LangChain</a>
+                <a href="adapters-crewai.html" class="nav-link">CrewAI</a>
+                <a href="adapters-openai.html" class="nav-link">OpenAI SDK</a>
+                <a href="adapters-custom.html" class="nav-link">Custom Adapters</a>
+            </div>
+            <div class="nav-group">
                 <div class="nav-group-title">Advanced</div>
-                <a href="api.html" class="nav-link active">API Reference</a>
-                <a href="ci-cd.html" class="nav-link">CI/CD</a>
+                <a href="scenarios.html" class="nav-link">YAML Scenarios</a>
+                <a href="baselines.html" class="nav-link">Baselines</a>
+                <a href="ci-cd.html" class="nav-link">CI/CD Integration</a>
+                <a href="api.html" class="nav-link" style="color: var(--fg-accent); font-weight: 600;">API Reference</a>
             </div>
             <div class="nav-group">
                 <div class="nav-group-title">Resources</div>
+                <a href="governance.html" class="nav-link">Governance</a>
                 <a href="faq.html" class="nav-link">FAQ</a>
                 <a href="https://github.com/adam85sims/Sentinel" target="_blank" class="nav-link">GitHub →</a>
             </div>
         </nav>
     </aside>
 
+    <!-- Main Content -->
     <main class="main">
-        <div class="page-header">
-            <h1>API Reference</h1>
-            <p class="subtitle">Complete public API documentation for all Sentinel modules.</p>
+        <h1>API Reference</h1>
+        <p style="color: var(--fg-secondary); margin-bottom: 24px;">
+            Complete reference for all public Sentinel modules. Each entry shows the class/function signature, parameters, and a brief description.
+        </p>
+
+        <!-- Table of Contents -->
+        <div class="toc">
+            <h3>Modules</h3>
+            <ul>
+                <li><a href="#sentinel.env">sentinel.env</a> — Mock environment layer</li>
+                <li><a href="#sentinel.models">sentinel.models</a> — Data models &amp; traces</li>
+                <li><a href="#sentinel.assertions">sentinel.assertions</a> — Behavioral assertions</li>
+                <li><a href="#sentinel.chaos">sentinel.chaos</a> — Chaos injection</li>
+                <li><a href="#sentinel.runner">sentinel.runner</a> — Test runner</li>
+                <li><a href="#sentinel.reporting">sentinel.reporting</a> — Reports &amp; diffing</li>
+                <li><a href="#sentinel.baseline">sentinel.baseline</a> — Baseline persistence</li>
+            </ul>
         </div>
 
-        <div class="content">
-            <!-- sentinel.env -->
-            <h2 id="env">sentinel.env</h2>
-            <p>Mock environment layer for agent testing.</p>
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- sentinel.env -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <div class="api-section" id="sentinel.env">
+            <h2><code>sentinel.env</code> — Mock Environment Layer</h2>
+            <p style="color: var(--fg-secondary); margin-bottom: 16px;">
+                Provides configurable mock tools, REST/GraphQL API simulation, in-memory database, and a fluent builder for composing test environments.
+            </p>
 
+            <div class="callout">
+                <strong>Imports:</strong>
+                <code>from sentinel.env import MockTool, MockAPI, MockDatabase, EnvironmentBuilder, Environment</code>
+            </div>
+
+            <!-- Errors -->
+            <h3>Errors</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">class</span> <span class="cls">MockToolError</span>(<span class="type">Exception</span>):<br>    <span class="fn">__init__</span>(<span class="param">message: <span class="type">str</span></span>, <span class="param">status_code: <span class="type">int</span> = <span class="int">500</span></span>)</div>
+                <p>Base error for mock tool failures. Raised when a mock tool simulates an error response.</p>
+            </div>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">class</span> <span class="cls">RateLimitError</span>(<span class="type">MockToolError</span>):<br>    <span class="fn">__init__</span>(<span class="param">message: <span class="type">str</span> = <span class="str">"Rate limit exceeded"</span></span>, <span class="param">retry_after: <span class="type">float</span> = <span class="float">60.0</span></span>)</div>
+                <p>Raised when a mock tool simulates rate limiting (HTTP 429).</p>
+            </div>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">class</span> <span class="cls">TimeoutError</span>(<span class="type">MockToolError</span>):<br>    <span class="fn">__init__</span>(<span class="param">message: <span class="type">str</span> = <span class="str">"Request timed out"</span></span>)</div>
+                <p>Raised when a mock tool simulates a timeout (HTTP 408).</p>
+            </div>
+
+            <!-- MockToolCall -->
+            <h3>MockToolCall</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">@dataclass</span><br><span class="kw">class</span> <span class="cls">MockToolCall</span>:<br>    <span class="param">tool_name: <span class="type">str</span></span><br>    <span class="param">arguments: <span class="type">Dict[str, Any]</span></span><br>    <span class="param">result: <span class="type">Any</span> = <span class="none">None</span></span><br>    <span class="param">error: <span class="type">Optional[str]</span> = <span class="none">None</span></span><br>    <span class="param">duration_ms: <span class="type">float</span> = <span class="float">0.0</span></span><br>    <span class="param">timestamp: <span class="type">float</span></span></div>
+                <p>Record of a single call to a mock tool. Stored for later assertion and analysis.</p>
+            </div>
+
+            <!-- MockTool -->
             <h3>MockTool</h3>
-            <pre><code>class MockTool:
-    name: str
-    response: Any = None
-    response_fn: Callable = None
-    side_effect: Exception = None
-    latency_ms: float = 0.0
-    error_probability: float = 0.0
-    error_factory: Callable = None
 
-    def __call__(self, **kwargs) -> Any</code></pre>
+            <div class="api-card">
+                <div class="sig"><span class="kw">@dataclass</span><br><span class="kw">class</span> <span class="cls">MockTool</span>:<br>    <span class="param">name: <span class="type">str</span></span><br>    <span class="param">response: <span class="type">Any</span> = <span class="none">None</span></span><br>    <span class="param">response_fn: <span class="type">Optional[Callable]</span> = <span class="none">None</span></span><br>    <span class="param">side_effect: <span class="type">Optional[Exception]</span> = <span class="none">None</span></span><br>    <span class="param">latency_ms: <span class="type">float</span> = <span class="float">0.0</span></span><br>    <span class="param">error_probability: <span class="type">float</span> = <span class="float">0.0</span></span><br>    <span class="param">error_factory: <span class="type">Optional[Callable]</span> = <span class="none">None</span></span><br>    <span class="param">call_handler: <span class="type">Optional[Callable]</span> = <span class="none">None</span></span><br>    <span class="param">calls: <span class="type">List[MockToolCall]</span></span></div>
+                <p>
+                    Configurable mock tool that intercepts calls and returns canned responses.
+                    Supports static responses, dynamic response functions, latency simulation,
+                    error injection (one-shot or probability-based), and call recording.
+                </p>
+                <dl class="props">
+                    <dt>call_count</dt>
+                    <dd><code>int</code> — Number of times this tool was called.</dd>
+                    <dt>last_call</dt>
+                    <dd><code>Optional[MockToolCall]</code> — The most recent call record.</dd>
+                </dl>
+            </div>
 
+            <!-- MockAPI -->
             <h3>MockAPI</h3>
-            <pre><code>class MockAPI:
-    base_url: str
-    routes: Dict[str, Any]</code></pre>
 
+            <div class="api-card">
+                <div class="sig"><span class="kw">class</span> <span class="cls">MockAPI</span>:<br>    <span class="fn">__init__</span>(<span class="param">base_url: <span class="type">str</span> = <span class="str">""</span></span>, <span class="param">rate_limit_per_minute: <span class="type">int</span> = <span class="int">0</span></span>,<br>             <span class="param">default_status: <span class="type">int</span> = <span class="int">200</span></span>, <span class="param">default_response: <span class="type">Any</span> = <span class="none">None</span></span>)</div>
+                <p>
+                    Simulates a REST or GraphQL API with configurable routes. Supports route matching
+                    by method + URL pattern (exact or regex), configurable status codes and responses,
+                    latency simulation, probability-based error injection, rate limiting, and call recording.
+                </p>
+                <dl class="props">
+                    <dt>add_route(route: RouteConfig) → MockAPI</dt>
+                    <dd>Add a route configuration. Returns self for chaining.</dd>
+                    <dt>graphql_handler(operation_name, handler) → MockAPI</dt>
+                    <dd>Register a handler for a specific GraphQL operation.</dd>
+                    <dt>request(method, url, headers=None, body=None) → Any</dt>
+                    <dd>Execute a mock API request. Returns the configured response.</dd>
+                    <dt>graphql(query, variables=None, operation_name=None) → Any</dt>
+                    <dd>Execute a mock GraphQL query or mutation.</dd>
+                    <dt>as_tool(name="api_call") → MockTool</dt>
+                    <dd>Create a MockTool that delegates to this API.</dd>
+                    <dt>call_count</dt>
+                    <dd><code>int</code> — Number of requests made.</dd>
+                    <dt>calls</dt>
+                    <dd><code>List[APICallRecord]</code> — All recorded API calls.</dd>
+                    <dt>last_call</dt>
+                    <dd><code>Optional[APICallRecord]</code> — Most recent call.</dd>
+                    <dt>reset()</dt>
+                    <dd>Clear all recorded calls.</dd>
+                </dl>
+            </div>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">@dataclass</span><br><span class="kw">class</span> <span class="cls">RouteConfig</span>:<br>    <span class="param">method: <span class="type">str</span> = <span class="str">"*"</span></span><br>    <span class="param">url_pattern: <span class="type">str</span> = <span class="str">"*"</span></span><br>    <span class="param">status: <span class="type">int</span> = <span class="int">200</span></span><br>    <span class="param">response: <span class="type">Any</span> = <span class="none">None</span></span><br>    <span class="param">headers: <span class="type">Dict[str, str]</span></span><br>    <span class="param">latency_ms: <span class="type">float</span> = <span class="float">0.0</span></span><br>    <span class="param">error_probability: <span class="type">float</span> = <span class="float">0.0</span></span><br>    <span class="param">error_status: <span class="type">int</span> = <span class="int">500</span></span></div>
+                <p>Configuration for a single API route. Use <code>"~"</code> prefix for regex URL patterns (e.g., <code>"~^/users/\\d+$"</code>).</p>
+            </div>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">@dataclass</span><br><span class="kw">class</span> <span class="cls">APICallRecord</span>:<br>    <span class="param">method: <span class="type">str</span></span><br>    <span class="param">url: <span class="type">str</span></span><br>    <span class="param">headers: <span class="type">Dict[str, str]</span></span><br>    <span class="param">body: <span class="type">Any</span></span><br>    <span class="param">response_status: <span class="type">int</span></span><br>    <span class="param">response_body: <span class="type">Any</span></span><br>    <span class="param">error: <span class="type">Optional[str]</span></span><br>    <span class="param">duration_ms: <span class="type">float</span></span><br>    <span class="param">timestamp: <span class="type">float</span></span></div>
+                <p>Record of a single API call to a MockAPI, including request/response details and timing.</p>
+            </div>
+
+            <!-- MockDatabase -->
+            <h3>MockDatabase</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">class</span> <span class="cls">MockDatabase</span>:<br>    <span class="fn">__init__</span>(<span class="param">latency_ms: <span class="type">float</span> = <span class="float">0.0</span></span>, <span class="param">error_probability: <span class="type">float</span> = <span class="float">0.0</span></span>)</div>
+                <p>
+                    In-memory data store with query interception. Simulates a database with tables, rows,
+                    and basic query support including SELECT, INSERT, UPDATE, DELETE with WHERE filtering.
+                    Records all queries for behavioral assertions.
+                </p>
+                <dl class="props">
+                    <dt>create_table(name, schema=None)</dt>
+                    <dd>Create a table with optional schema definition.</dd>
+                    <dt>drop_table(name)</dt>
+                    <dd>Drop a table and all its data.</dd>
+                    <dt>insert(table, row)</dt>
+                    <dd>Insert a row into a table.</dd>
+                    <dt>insert_many(table, rows) → int</dt>
+                    <dd>Insert multiple rows. Returns count of inserted rows.</dd>
+                    <dt>select(table, where=None, columns=None, limit=None) → List[Dict]</dt>
+                    <dd>Select rows with optional WHERE filter, column selection, and limit.</dd>
+                    <dt>update(table, updates, where=None) → int</dt>
+                    <dd>Update rows. Returns count of updated rows.</dd>
+                    <dt>delete(table, where=None) → int</dt>
+                    <dd>Delete rows. Returns count of deleted rows.</dd>
+                    <dt>count(table, where=None) → int</dt>
+                    <dd>Count rows with optional filtering.</dd>
+                    <dt>get_table(name) → List[Dict]</dt>
+                    <dd>Get all rows in a table.</dd>
+                    <dt>get_tables() → Dict[str, List[Dict]]</dt>
+                    <dd>Get all tables and their rows.</dd>
+                    <dt>as_tool(name="database") → MockTool</dt>
+                    <dd>Create a MockTool that delegates to this database. Supports operations: select, insert, insert_many, update, delete, count, list_tables.</dd>
+                    <dt>queries</dt>
+                    <dd><code>List[QueryRecord]</code> — All recorded queries.</dd>
+                    <dt>queries_by_type(query_type)</dt>
+                    <dd>Get all queries of a specific type (select, insert, update, delete).</dd>
+                    <dt>queries_on_table(table)</dt>
+                    <dd>Get all queries on a specific table.</dd>
+                    <dt>reset()</dt>
+                    <dd>Clear all data and query history.</dd>
+                </dl>
+            </div>
+
+            <!-- EnvironmentBuilder -->
             <h3>EnvironmentBuilder</h3>
-            <pre><code>class EnvironmentBuilder:
-    def mock_tool(self, name: str, **kwargs) -> "EnvironmentBuilder"
-    def mock_api(self, base_url: str, **kwargs) -> "EnvironmentBuilder"
-    def mock_database(self, name: str) -> "EnvironmentBuilder"
-    def with_rate_limit(self, calls_per_minute: int) -> "EnvironmentBuilder"
-    def build(self) -> Environment</code></pre>
 
-            <h3>Exceptions</h3>
-            <pre><code>class MockToolError(Exception):
-    status_code: int = 500
+            <div class="api-card">
+                <div class="sig"><span class="kw">class</span> <span class="cls">EnvironmentBuilder</span>:<br>    <span class="fn">mock_tool</span>(<span class="param">name, response=<span class="none">None</span>, response_fn=<span class="none">None</span>, side_effect=<span class="none">None</span>,</span><br>              <span class="param">latency_ms=<span class="float">0.0</span>, error_probability=<span class="float">0.0</span></span>) → EnvironmentBuilder<br>    <span class="fn">mock_api</span>(<span class="param">base_url=<span class="str">""</span>, name=<span class="none">None</span>, rate_limit_per_minute=<span class="int">0</span>,</span><br>             <span class="param">default_status=<span class="int">200</span>, default_response=<span class="none">None</span></span>) → EnvironmentBuilder<br>    <span class="fn">mock_database</span>(<span class="param">name=<span class="str">"database"</span>, latency_ms=<span class="float">0.0</span>, error_probability=<span class="float">0.0</span></span>) → EnvironmentBuilder<br>    <span class="fn">with_rate_limit</span>(<span class="param">calls_per_minute: <span class="type">int</span> = <span class="int">10</span></span>) → EnvironmentBuilder<br>    <span class="fn">build</span>() → Environment</div>
+                <p>
+                    Fluent API for composing test environments with mock tools, APIs, and databases.
+                    All methods return <code>self</code> for chaining. Call <code>build()</code> to construct
+                    the final <code>Environment</code>.
+                </p>
+            </div>
 
-class RateLimitError(MockToolError):
-    retry_after: float = 60.0
-    status_code: int = 429
+            <!-- Environment -->
+            <h3>Environment</h3>
 
-class TimeoutError(MockToolError):
-    status_code: int = 408</code></pre>
+            <div class="api-card">
+                <div class="sig"><span class="kw">@dataclass</span><br><span class="kw">class</span> <span class="cls">Environment</span>:<br>    <span class="param">tools: <span class="type">Dict[str, MockTool]</span></span><br>    <span class="param">apis: <span class="type">Dict[str, MockAPI]</span></span><br>    <span class="param">databases: <span class="type">Dict[str, MockDatabase]</span></span><br>    <span class="param">rate_limit: <span class="type">Optional[Dict]</span></span></div>
+                <p>
+                    A composed test environment providing tools by name and tracking all calls
+                    made across the entire environment.
+                </p>
+                <dl class="props">
+                    <dt>get_tool(name) → Optional[MockTool]</dt>
+                    <dd>Retrieve a mock tool by name.</dd>
+                    <dt>get_tools() → Dict[str, MockTool]</dt>
+                    <dd>Get all mock tools.</dd>
+                    <dt>get_api(name) → Optional[MockAPI]</dt>
+                    <dd>Retrieve a mock API by name.</dd>
+                    <dt>get_database(name) → Optional[MockDatabase]</dt>
+                    <dd>Retrieve a mock database by name.</dd>
+                    <dt>all_calls</dt>
+                    <dd><code>List[MockToolCall]</code> — All tool calls across all tools, in chronological order.</dd>
+                    <dt>reset()</dt>
+                    <dd>Clear all recorded calls.</dd>
+                </dl>
+            </div>
+        </div>
 
-            <!-- sentinel.models -->
-            <h2 id="models">sentinel.models</h2>
-            <p>Core data structures for agent traces.</p>
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- sentinel.models -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <div class="api-section" id="sentinel.models">
+            <h2><code>sentinel.models</code> — Data Models &amp; Traces</h2>
+            <p style="color: var(--fg-secondary); margin-bottom: 16px;">
+                Core data structures that capture agent execution for behavioral analysis. The <code>AgentTrace</code> is the primary data structure for all assertions.
+            </p>
 
-            <pre><code>class StepAction(str, Enum):
-    PLAN, TOOL_CALL, REASON, RESPOND, ERROR
+            <div class="callout">
+                <strong>Imports:</strong>
+                <code>from sentinel.models import AgentTrace, ToolCall, Step, StateChange, Error, ErrorSeverity, StepAction</code>
+            </div>
 
-class ErrorSeverity(str, Enum):
-    LOW, MEDIUM, HIGH, CRITICAL
+            <!-- Enums -->
+            <h3>Enums</h3>
 
-class ToolCall:
-    tool_name: str
-    arguments: Dict[str, Any]
-    result: Any = None
-    duration_ms: float = 0.0
-    error: Optional[str] = None
+            <div class="api-card">
+                <div class="sig"><span class="kw">class</span> <span class="cls">StepAction</span>(<span class="type">str, Enum</span>):</div>
+                <table class="enum-table">
+                    <thead><tr><th>Value</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td>PLAN</td><td>Agent planning step</td></tr>
+                        <tr><td>TOOL_CALL</td><td>Agent invoking a tool</td></tr>
+                        <tr><td>REASON</td><td>Agent reasoning/chain-of-thought</td></tr>
+                        <tr><td>RESPOND</td><td>Agent producing output</td></tr>
+                        <tr><td>ERROR</td><td>Error encountered during execution</td></tr>
+                    </tbody>
+                </table>
+            </div>
 
-class AgentTrace:
-    steps: List[Step]
-    tool_calls: List[ToolCall]
-    def add_step(self, step: Step) -> None
-    def add_tool_call(self, tool_call: ToolCall) -> None</code></pre>
+            <div class="api-card">
+                <div class="sig"><span class="kw">class</span> <span class="cls">ErrorSeverity</span>(<span class="type">str, Enum</span>):</div>
+                <table class="enum-table">
+                    <thead><tr><th>Value</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td>LOW</td><td>Minor issue, execution continues normally</td></tr>
+                        <tr><td>MEDIUM</td><td>Noticeable problem, may affect output quality</td></tr>
+                        <tr><td>HIGH</td><td>Significant issue, likely degraded behavior</td></tr>
+                        <tr><td>CRITICAL</td><td>Severe failure, agent may not recover</td></tr>
+                    </tbody>
+                </table>
+            </div>
 
-            <!-- sentinel.assertions -->
-            <h2 id="assertions">sentinel.assertions</h2>
-            <p>20+ behavioral assertions. See <a href="assertions.html">Assertions</a> for full details.</p>
+            <!-- ToolCall -->
+            <h3>ToolCall</h3>
 
-            <pre><code># Tool Call
-assert_tool_called(trace, tool_name)
-assert_tool_not_called(trace, tool_name)
-assert_tool_call_order(trace, expected)
-assert_tool_call_count(trace, tool_name, expected_count)
-assert_no_tool_errors(trace)
+            <div class="api-card">
+                <div class="sig"><span class="kw">@dataclass</span><br><span class="kw">class</span> <span class="cls">ToolCall</span>:<br>    <span class="param">tool_name: <span class="type">str</span></span><br>    <span class="param">arguments: <span class="type">Dict[str, Any]</span></span><br>    <span class="param">result: <span class="type">Any</span> = <span class="none">None</span></span><br>    <span class="param">duration_ms: <span class="type">float</span> = <span class="float">0.0</span></span><br>    <span class="param">error: <span class="type">Optional[str]</span> = <span class="none">None</span></span><br>    <span class="param">step_id: <span class="type">int</span> = <span class="int">0</span></span><br>    <span class="param">timestamp: <span class="type">float</span></span></div>
+                <p>
+                    Records a single tool invocation by the agent. Captures the tool name, arguments,
+                    result, and timing to enable behavioral assertions on tool usage patterns.
+                </p>
+                <dl class="props">
+                    <dt>succeeded</dt>
+                    <dd><code>bool</code> — True if the call did not produce an error.</dd>
+                </dl>
+            </div>
 
-# State
-assert_state_consistent(trace)
-assert_state_changed(trace, key)
+            <!-- StateChange -->
+            <h3>StateChange</h3>
 
-# Resilience
-assert_graceful_degradation(trace, error_count)
-assert_no_silent_failure(trace, validators)
+            <div class="api-card">
+                <div class="sig"><span class="kw">@dataclass</span><br><span class="kw">class</span> <span class="cls">StateChange</span>:<br>    <span class="param">key: <span class="type">str</span></span><br>    <span class="param">old_value: <span class="type">Any</span> = <span class="none">None</span></span><br>    <span class="param">new_value: <span class="type">Any</span> = <span class="none">None</span></span><br>    <span class="param">step_id: <span class="type">int</span> = <span class="int">0</span></span><br>    <span class="param">timestamp: <span class="type">float</span></span></div>
+                <p>Records a mutation to agent memory or state. Tracks key-value changes to detect state inconsistency, staleness, and cross-session divergence.</p>
+            </div>
 
-# Performance
-assert_latency(trace, max_ms)
-assert_step_count(trace, min_steps, max_steps)</code></pre>
+            <!-- Error -->
+            <h3>Error</h3>
 
-            <!-- sentinel.chaos -->
-            <h2 id="chaos">sentinel.chaos</h2>
-            <p>Failure injection for behavioral testing. See <a href="chaos.html">Chaos Overview</a>.</p>
+            <div class="api-card">
+                <div class="sig"><span class="kw">@dataclass</span><br><span class="kw">class</span> <span class="cls">Error</span>:<br>    <span class="param">message: <span class="type">str</span></span><br>    <span class="param">severity: <span class="type">ErrorSeverity</span> = <span class="cls">ErrorSeverity.MEDIUM</span></span><br>    <span class="param">step_id: <span class="type">int</span> = <span class="int">0</span></span><br>    <span class="param">recoverable: <span class="type">bool</span> = <span class="bool">True</span></span><br>    <span class="param">timestamp: <span class="type">float</span></span></div>
+                <p>Records an error encountered during agent execution, including severity and recoverability.</p>
+            </div>
 
-            <h3>Injectors</h3>
-            <pre><code>class ToolFailureInjector:
-    def __init__(self, tool_name, failure_type="error",
-                 probability=1.0, seed=None)
-    def wrap(self, mock: MockTool) -> ChaosToolWrapper
-    def make_validator(self) -> Callable
+            <!-- Step -->
+            <h3>Step</h3>
 
-class NetworkPartition:
-    def __init__(self, connectivity, partition_probability=1.0,
-                 seed=None, heal_after_calls=None)
-    def wrap(self, mock: MockTool) -> ChaosToolWrapper
-    def is_reachable(self, source, target) -> bool
+            <div class="api-card">
+                <div class="sig"><span class="kw">@dataclass</span><br><span class="kw">class</span> <span class="cls">Step</span>:<br>    <span class="param">step_id: <span class="type">int</span></span><br>    <span class="param">action: <span class="type">StepAction</span></span><br>    <span class="param">input: <span class="type">Any</span> = <span class="none">None</span></span><br>    <span class="param">output: <span class="type">Any</span> = <span class="none">None</span></span><br>    <span class="param">duration_ms: <span class="type">float</span> = <span class="float">0.0</span></span><br>    <span class="param">tool_calls: <span class="type">List[ToolCall]</span></span><br>    <span class="param">error: <span class="type">Optional[Error]</span> = <span class="none">None</span></span></div>
+                <p>A single execution step in the agent's trace. Each step represents one atomic action (plan, tool_call, reason, respond, error).</p>
+            </div>
 
-class ClockSkew:
-    def __init__(self, skew_seconds=0.0, drift_rate=0.0,
-                 affected_tools=None, seed=None)
-    def get_skewed_timestamp(self, tool_name=None) -> float
+            <!-- AgentTrace -->
+            <h3>AgentTrace</h3>
 
-class MemoryPressure:
-    def __init__(self, max_context_tokens=4096,
-                 pressure_threshold=0.8, eviction_strategy="fifo",
-                 gc_pause_ms=0.0, oom_probability=0.0, seed=None)
-    def simulate_token_usage(self, tokens) -> Optional[str]
+            <div class="api-card">
+                <div class="sig"><span class="kw">@dataclass</span><br><span class="kw">class</span> <span class="cls">AgentTrace</span>:<br>    <span class="param">steps: <span class="type">List[Step]</span></span><br>    <span class="param">tool_calls: <span class="type">List[ToolCall]</span></span><br>    <span class="param">state_changes: <span class="type">List[StateChange]</span></span><br>    <span class="param">errors: <span class="type">List[Error]</span></span><br>    <span class="param">metadata: <span class="type">Dict[str, Any]</span></span></div>
+                <p>
+                    Full execution trace of an agent run. This is the primary data structure for behavioral analysis.
+                    It captures everything the agent did, in order, with timing and error information.
+                </p>
+                <dl class="props">
+                    <dt>finish()</dt>
+                    <dd>Mark the trace as complete (records end time).</dd>
+                    <dt>total_duration_ms</dt>
+                    <dd><code>float</code> — Total execution time in milliseconds.</dd>
+                    <dt>total_steps</dt>
+                    <dd><code>int</code> — Number of steps in the trace.</dd>
+                    <dt>total_tool_calls</dt>
+                    <dd><code>int</code> — Total number of tool calls.</dd>
+                    <dt>failed_tool_calls</dt>
+                    <dd><code>List[ToolCall]</code> — All tool calls that produced errors.</dd>
+                    <dt>tool_names_called</dt>
+                    <dd><code>List[str]</code> — Unique tool names in order of first call.</dd>
+                    <dt>tool_calls_by_name(name) → List[ToolCall]</dt>
+                    <dd>Get all calls to a specific tool, in order.</dd>
+                    <dt>add_step(step)</dt>
+                    <dd>Append a step and index its tool calls.</dd>
+                    <dt>add_tool_call(call)</dt>
+                    <dd>Record a tool call at the trace level.</dd>
+                    <dt>add_state_change(change)</dt>
+                    <dd>Record a state mutation.</dd>
+                    <dt>add_error(error)</dt>
+                    <dd>Record an error.</dd>
+                    <dt>to_dict() → Dict[str, Any]</dt>
+                    <dd>Serialize trace to a dictionary for reporting.</dd>
+                </dl>
+            </div>
+        </div>
 
-class ContextDegradation:
-    def __init__(self, strategy="truncation", start_step=1,
-                 degradation_rate=0.1, seed=None)
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- sentinel.assertions -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <div class="api-section" id="sentinel.assertions">
+            <h2><code>sentinel.assertions</code> — Behavioral Assertions</h2>
+            <p style="color: var(--fg-secondary); margin-bottom: 16px;">
+                20+ assertions across tool calls, state consistency, governance compliance, resilience, and performance.
+                Each assertion takes an <code>AgentTrace</code> and raises <code>AssertionError</code> with a descriptive message on failure.
+            </p>
 
-class CascadingFailures:
-    def __init__(self, cascade_probability=0.5,
-                 max_cascade_depth=3, seed=None)</code></pre>
+            <div class="callout">
+                <strong>Imports:</strong>
+                <code>from sentinel.assertions import assert_tool_called, assert_no_tool_errors, ...</code>
+            </div>
 
-            <!-- sentinel.runner -->
-            <h2 id="runner">sentinel.runner</h2>
-            <p>Test execution and scenario management.</p>
+            <!-- Tool Call Assertions -->
+            <h3>Tool Call Assertions</h3>
 
-            <pre><code>class AgentConfig:
-    agent_type: Optional[str] = None
-    model: str = "unknown"
-    tools: List[str] = []
-    factory: Optional[Callable] = None
+            <div class="api-card">
+                <div class="sig"><span class="fn">assert_tool_called</span>(<span class="param">trace: <span class="type">AgentTrace</span></span>, <span class="param">tool_name: <span class="type">str</span></span>, <span class="param">**expected_kwargs</span>)</div>
+                <p>Assert that a specific tool was called. If kwargs are provided, checks that at least one call matches ALL specified arguments.</p>
+            </div>
 
-class ScenarioRunner:
-    def run(self, scenario, agent_fn=None) -> SentinelResult
-    def run_batch(self, scenarios, agent_fn=None) -> List[SentinelResult]
+            <div class="api-card">
+                <div class="sig"><span class="fn">assert_tool_not_called</span>(<span class="param">trace: <span class="type">AgentTrace</span></span>, <span class="param">tool_name: <span class="type">str</span></span>)</div>
+                <p>Assert that a specific tool was NOT called. Useful for verifying that agents don't take unauthorized actions.</p>
+            </div>
 
-def sentinel_test(env=None, task="", **kwargs) -> Callable</code></pre>
+            <div class="api-card">
+                <div class="sig"><span class="fn">assert_tool_call_order</span>(<span class="param">trace: <span class="type">AgentTrace</span></span>, <span class="param">expected_order: <span class="type">List[str]</span></span>)</div>
+                <p>Assert that tools were called in the expected order. Checks that UNIQUE tool names appear in the trace in the specified order. Extra calls between expected calls are allowed.</p>
+            </div>
 
-            <!-- sentinel.reporting -->
-            <h2 id="reporting">sentinel.reporting</h2>
-            <p>Regression detection and report generation.</p>
+            <div class="api-card">
+                <div class="sig"><span class="fn">assert_tool_call_count</span>(<span class="param">trace: <span class="type">AgentTrace</span></span>, <span class="param">tool_name: <span class="type">str</span></span>, <span class="param">expected_count: <span class="type">int</span></span>)</div>
+                <p>Assert that a tool was called exactly N times.</p>
+            </div>
 
-            <pre><code>class RegressionReport:
-    def __init__(self, baseline, current)
-    def to_dict(self) -> dict
-    def to_html(self) -> str
-    def to_junit_xml(self) -> str</code></pre>
+            <div class="api-card">
+                <div class="sig"><span class="fn">assert_no_tool_errors</span>(<span class="param">trace: <span class="type">AgentTrace</span></span>)</div>
+                <p>Assert that no tool calls resulted in errors. Reports all failed calls on failure.</p>
+            </div>
 
-            <!-- sentinel.baseline -->
-            <h2 id="baseline">sentinel.baseline</h2>
-            <p>JSON-based baseline storage with git integration.</p>
+            <!-- State Assertions -->
+            <h3>State Assertions</h3>
 
-            <pre><code>def record_baseline(results, path=None) -> str
-def load_baseline(path) -> dict
-def compare_baselines(old, new) -> RegressionReport</code></pre>
+            <div class="api-card">
+                <div class="sig"><span class="fn">assert_state_consistent</span>(<span class="param">trace: <span class="type">AgentTrace</span></span>, <span class="param">key: <span class="type">str</span></span>, <span class="param">expected: <span class="type">Any</span> = <span class="none">None</span></span>)</div>
+                <p>Assert that agent state has a specific value. Checks the most recent state change for the given key.</p>
+            </div>
 
-            <!-- CLI -->
-            <h2 id="cli">CLI Commands</h2>
-            <pre><code>sentinel run --path scenario.yaml     # Run a scenario
-sentinel list                         # List scenarios
-sentinel info &lt;scenario&gt;              # Show scenario details
-sentinel baseline record              # Record baseline
-sentinel baseline show                # Show baseline
-sentinel diff                         # Compare baselines
-sentinel report                       # Generate report</code></pre>
+            <div class="api-card">
+                <div class="sig"><span class="fn">assert_state_changed</span>(<span class="param">trace: <span class="type">AgentTrace</span></span>, <span class="param">key: <span class="type">str</span></span>)</div>
+                <p>Assert that a specific state key was modified during execution.</p>
+            </div>
+
+            <div class="api-card">
+                <div class="sig"><span class="fn">assert_state_not_stale</span>(<span class="param">trace: <span class="type">AgentTrace</span></span>, <span class="param">key: <span class="type">str</span></span>, <span class="param">max_age_seconds: <span class="type">float</span></span>)</div>
+                <p>Assert that a state key was recently written to. Detects stale state where the agent reads outdated data.</p>
+            </div>
+
+            <div class="api-card">
+                <div class="sig"><span class="fn">assert_state_consistent_across_traces</span>(<span class="param">traces: <span class="type">List[AgentTrace]</span></span>, <span class="param">key: <span class="type">str</span></span>)</div>
+                <p>Assert that a state key has the same value across multiple traces. Detects cross-session divergence.</p>
+            </div>
+
+            <div class="api-card">
+                <div class="sig"><span class="fn">assert_state_no_collisions</span>(<span class="param">traces: <span class="type">List[AgentTrace]</span></span>, <span class="param">allowed_keys: <span class="type">Optional[List[str]]</span> = <span class="none">None</span></span>)</div>
+                <p>Assert that no state key collisions occurred between agents. Detects concurrent writes to the same key.</p>
+            </div>
+
+            <!-- Governance Assertions -->
+            <h3>Governance Assertions</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="fn">assert_permission_respected</span>(<span class="param">trace: <span class="type">AgentTrace</span></span>, <span class="param">tool_name: <span class="type">str</span></span>, <span class="param">requires_approval: <span class="type">bool</span> = <span class="bool">True</span></span>)</div>
+                <p>Assert that a tool requiring approval was called (and thus approved).</p>
+            </div>
+
+            <div class="api-card">
+                <div class="sig"><span class="fn">assert_permission_violated</span>(<span class="param">trace: <span class="type">AgentTrace</span></span>, <span class="param">tool_name: <span class="type">str</span></span>)</div>
+                <p>Assert that a forbidden tool WAS called (detecting a violation). Asserts the NEGATIVE — that the agent took an action it should not have.</p>
+            </div>
+
+            <div class="api-card">
+                <div class="sig"><span class="fn">assert_tool_called_at_most</span>(<span class="param">trace: <span class="type">AgentTrace</span></span>, <span class="param">tool_name: <span class="type">str</span></span>, <span class="param">max_count: <span class="type">int</span></span>)</div>
+                <p>Assert that a tool was called at most N times. Implements rate-limited governance for expensive or dangerous tools.</p>
+            </div>
+
+            <div class="api-card">
+                <div class="sig"><span class="fn">assert_tool_allowlist</span>(<span class="param">trace: <span class="type">AgentTrace</span></span>, <span class="param">allowed_tools: <span class="type">List[str]</span></span>)</div>
+                <p>Assert that ONLY tools from the allowlist were called. The agent may only invoke tools in the allowed set.</p>
+            </div>
+
+            <div class="api-card">
+                <div class="sig"><span class="fn">assert_tool_denylist</span>(<span class="param">trace: <span class="type">AgentTrace</span></span>, <span class="param">denied_tools: <span class="type">List[str]</span></span>)</div>
+                <p>Assert that NONE of the denied tools were called. Certain dangerous tools must never be invoked under any circumstances.</p>
+            </div>
+
+            <div class="api-card">
+                <div class="sig"><span class="fn">assert_approval_before_action</span>(<span class="param">trace: <span class="type">AgentTrace</span></span>, <span class="param">approval_tool: <span class="type">str</span></span>, <span class="param">action_tool: <span class="type">str</span></span>)</div>
+                <p>Assert that an approval tool was called before a restricted action. Implements sequential governance: certain actions require an approval step first.</p>
+            </div>
+
+            <!-- Resilience Assertions -->
+            <h3>Resilience Assertions</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="fn">assert_graceful_degradation</span>(<span class="param">trace: <span class="type">AgentTrace</span></span>, <span class="param">on_error_tool: <span class="type">Optional[str]</span> = <span class="none">None</span></span>)</div>
+                <p>Assert that the agent handled errors gracefully. Checks that the trace completed, no critical errors are unrecovered, and if a specific tool errored the agent continued execution.</p>
+            </div>
+
+            <div class="api-card">
+                <div class="sig"><span class="fn">assert_no_silent_failure</span>(<span class="param">trace: <span class="type">AgentTrace</span></span>, <span class="param">validator: <span class="type">Optional[Callable]</span> = <span class="none">None</span></span>)</div>
+                <p>Assert that the agent's output is not a silent failure. Detects when the agent completes without errors but produces incorrect or empty output.</p>
+            </div>
+
+            <!-- Performance Assertions -->
+            <h3>Performance Assertions</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="fn">assert_latency</span>(<span class="param">trace: <span class="type">AgentTrace</span></span>, <span class="param">max_ms: <span class="type">Optional[float]</span> = <span class="none">None</span></span>,<br>                   <span class="param">min_ms: <span class="type">Optional[float]</span> = <span class="none">None</span></span>, <span class="param">per_step_max_ms: <span class="type">Optional[float]</span> = <span class="none">None</span></span>)</div>
+                <p>Assert that execution latency is within bounds. Checks total time and optionally per-step timing. Detects performance regressions.</p>
+            </div>
+
+            <div class="api-card">
+                <div class="sig"><span class="fn">assert_token_usage</span>(<span class="param">trace: <span class="type">AgentTrace</span></span>, <span class="param">max_tokens: <span class="type">Optional[int]</span> = <span class="none">None</span></span>,<br>                     <span class="param">min_tokens: <span class="type">Optional[int]</span> = <span class="none">None</span></span>)</div>
+                <p>Assert that token usage is within bounds. Reads from <code>trace.metadata['token_usage']['total_tokens']</code>.</p>
+            </div>
+
+            <div class="api-card">
+                <div class="sig"><span class="fn">assert_step_count</span>(<span class="param">trace: <span class="type">AgentTrace</span></span>, <span class="param">max_steps: <span class="type">Optional[int]</span> = <span class="none">None</span></span>,<br>                    <span class="param">min_steps: <span class="type">Optional[int]</span> = <span class="none">None</span></span>, <span class="param">exact_steps: <span class="type">Optional[int]</span> = <span class="none">None</span></span>)</div>
+                <p>Assert that the agent used an expected number of steps. Detects agents stuck in loops or doing insufficient work.</p>
+            </div>
+
+            <div class="api-card">
+                <div class="sig"><span class="fn">assert_tool_latency</span>(<span class="param">trace: <span class="type">AgentTrace</span></span>, <span class="param">tool_name: <span class="type">str</span></span>,<br>                     <span class="param">max_ms: <span class="type">Optional[float]</span> = <span class="none">None</span></span>, <span class="param">avg_max_ms: <span class="type">Optional[float]</span> = <span class="none">None</span></span>)</div>
+                <p>Assert latency bounds on a specific tool's calls. Detects API degradation or agents hammering slow tools.</p>
+            </div>
+
+            <!-- Helper -->
+            <h3>Helper Function</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="fn">detect_state_collisions</span>(<span class="param">traces: <span class="type">List[AgentTrace]</span></span>) → <span class="type">List[Dict]</span></div>
+                <p>Detect when multiple agents write to the same state key within a 1-second window. Returns a list of collision events. Use <code>assert_state_no_collisions()</code> for assertion-based testing.</p>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- sentinel.chaos -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <div class="api-section" id="sentinel.chaos">
+            <h2><code>sentinel.chaos</code> — Chaos Injection</h2>
+            <p style="color: var(--fg-secondary); margin-bottom: 16px;">
+                Deterministic, budgeted failure injection for tool calls, LLM responses, context degradation, network partitions, clock skew, and memory pressure.
+            </p>
+
+            <div class="callout">
+                <strong>Imports:</strong>
+                <code>from sentinel.chaos import ChaosBudget, ToolFailureInjector, LLMFailureInjector, ContextDegradation, SpecDrift, CascadingFailures, NetworkPartition, ClockSkew, MemoryPressure</code>
+            </div>
+
+            <!-- Enums -->
+            <h3>Enums</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">class</span> <span class="cls">ToolFailureType</span>(<span class="type">str, Enum</span>):</div>
+                <table class="enum-table">
+                    <thead><tr><th>Value</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td>timeout</td><td>Request timed out</td></tr>
+                        <tr><td>error</td><td>Generic server error (500)</td></tr>
+                        <tr><td>rate_limit</td><td>Rate limit exceeded (429)</td></tr>
+                        <tr><td>malformed</td><td>Malformed response (502)</td></tr>
+                        <tr><td>partial</td><td>Partial response, connection closed mid-transfer</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">class</span> <span class="cls">LLMFailureType</span>(<span class="type">str, Enum</span>):</div>
+                <table class="enum-table">
+                    <thead><tr><th>Value</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td>rate_limit</td><td>LLM API rate limit exceeded</td></tr>
+                        <tr><td>timeout</td><td>LLM API request timed out</td></tr>
+                        <tr><td>partial_response</td><td>LLM returned partial response</td></tr>
+                        <tr><td>stream_interrupt</td><td>LLM stream was interrupted</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">class</span> <span class="cls">DegradationStrategy</span>(<span class="type">str, Enum</span>):</div>
+                <table class="enum-table">
+                    <thead><tr><th>Value</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td>truncation</td><td>Truncate earlier context as steps accumulate</td></tr>
+                        <tr><td>noise</td><td>Inject noise into tool results</td></tr>
+                        <tr><td>drift</td><td>Gradually shift system prompt instructions</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">class</span> <span class="cls">DriftIntensity</span>(<span class="type">str, Enum</span>):</div>
+                <table class="enum-table">
+                    <thead><tr><th>Value</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td>subtle</td><td>Minor deviations, hard to detect</td></tr>
+                        <tr><td>moderate</td><td>Noticeable but still functional</td></tr>
+                        <tr><td>aggressive</td><td>Clear spec deviation</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- InjectionRecord -->
+            <h3>InjectionRecord</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">@dataclass</span><br><span class="kw">class</span> <span class="cls">InjectionRecord</span>:<br>    <span class="param">injector_type: <span class="type">str</span></span><br>    <span class="param">failure_type: <span class="type">str</span></span><br>    <span class="param">target: <span class="type">str</span></span><br>    <span class="param">step_id: <span class="type">Optional[int]</span></span><br>    <span class="param">call_index: <span class="type">Optional[int]</span></span><br>    <span class="param">timestamp: <span class="type">float</span></span><br>    <span class="param">message: <span class="type">str</span></span></div>
+                <p>Record of a single injected failure. Captures what failed, when, and why for later assertion and debugging.</p>
+            </div>
+
+            <!-- ToolFailureInjector -->
+            <h3>ToolFailureInjector</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">class</span> <span class="cls">ToolFailureInjector</span>:<br>    <span class="fn">__init__</span>(<span class="param">tool_name: <span class="type">str</span></span>, <span class="param">failure_type: <span class="type">str</span> = <span class="str">"error"</span></span>,<br>             <span class="param">probability: <span class="type">float</span> = <span class="float">1.0</span></span>, <span class="param">seed: <span class="type">Optional[int]</span> = <span class="none">None</span></span>,<br>             <span class="param">after_step: <span class="type">int</span> = <span class="int">0</span></span>, <span class="param">error_message: <span class="type">Optional[str]</span> = <span class="none">None</span></span>)</div>
+                <p>
+                    Injects failures into specific mock tool calls. Supports probability-based injection
+                    and deterministic seeding for reproducibility.
+                </p>
+                <dl class="props">
+                    <dt>wrap(tool: MockTool) → MockTool</dt>
+                    <dd>Wrap a MockTool with failure injection. Modifies the tool in place.</dd>
+                    <dt>inject(tool, arguments=None) → bool</dt>
+                    <dd>Manually trigger injection check. Returns True if injection was performed.</dd>
+                    <dt>injection_count</dt>
+                    <dd><code>int</code> — Number of failures injected so far.</dd>
+                    <dt>records</dt>
+                    <dd><code>List[InjectionRecord]</code> — All injection records.</dd>
+                    <dt>reset()</dt>
+                    <dd>Reset injection state.</dd>
+                </dl>
+            </div>
+
+            <!-- LLMFailureInjector -->
+            <h3>LLMFailureInjector</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">class</span> <span class="cls">LLMFailureInjector</span>:<br>    <span class="fn">__init__</span>(<span class="param">failure_type: <span class="type">str</span> = <span class="str">"rate_limit"</span></span>, <span class="param">after_step: <span class="type">int</span> = <span class="int">0</span></span>,<br>             <span class="param">probability: <span class="type">float</span> = <span class="float">1.0</span></span>, <span class="param">seed: <span class="type">Optional[int]</span> = <span class="none">None</span></span>,<br>             <span class="param">error_message: <span class="type">Optional[str]</span> = <span class="none">None</span></span>)</div>
+                <p>
+                    Injects failures at the LLM/step level: rate limits, timeouts, partial responses,
+                    and stream interruptions.
+                </p>
+                <dl class="props">
+                    <dt>check_step(step_id: int) → Optional[Dict]</dt>
+                    <dd>Check whether a step should be injected. Returns failure dict if injection should occur.</dd>
+                    <dt>get_error(step_id: int) → Optional[Exception]</dt>
+                    <dd>Get the appropriate exception for an LLM failure at the given step.</dd>
+                    <dt>injection_count / records / reset()</dt>
+                    <dd>Same interface as ToolFailureInjector.</dd>
+                </dl>
+            </div>
+
+            <!-- ContextDegradation -->
+            <h3>ContextDegradation</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">class</span> <span class="cls">ContextDegradation</span>:<br>    <span class="fn">__init__</span>(<span class="param">strategy: <span class="type">str</span> = <span class="str">"truncation"</span></span>, <span class="param">start_step: <span class="type">int</span> = <span class="int">1</span></span>,<br>             <span class="param">degradation_rate: <span class="type">float</span> = <span class="float">0.1</span></span>, <span class="param">seed: <span class="type">Optional[int]</span> = <span class="none">None</span></span>,<br>             <span class="param">max_truncation_pct: <span class="type">float</span> = <span class="float">0.5</span></span>)</div>
+                <p>
+                    Simulates context window erosion during long-running tasks. Three strategies:
+                    <code>truncation</code> (removes earlier context), <code>noise</code> (injects random perturbations),
+                    <code>drift</code> (shifts system prompt instructions). Uses accelerating degradation curve.
+                </p>
+                <dl class="props">
+                    <dt>on_step(step_id, context=None, system_prompt=None) → Dict</dt>
+                    <dd>Process a step and return degraded context/prompt. Returns dict with keys: context, system_prompt, degradation_level, injected.</dd>
+                    <dt>current_degradation_level</dt>
+                    <dd><code>float</code> — Current degradation intensity (0.0–1.0, quadratic acceleration).</dd>
+                    <dt>make_validator(original_context=None, original_prompt=None) → Callable</dt>
+                    <dd>Create a validator for use with <code>assert_no_silent_failure</code>.</dd>
+                    <dt>injection_count / records / reset()</dt>
+                    <dd>Standard injector interface.</dd>
+                </dl>
+            </div>
+
+            <!-- SpecDrift -->
+            <h3>SpecDrift</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">class</span> <span class="cls">SpecDrift</span>:<br>    <span class="fn">__init__</span>(<span class="param">intensity: <span class="type">str</span> = <span class="str">"subtle"</span></span>, <span class="param">start_step: <span class="type">int</span> = <span class="int">5</span></span>,<br>             <span class="param">probability: <span class="type">float</span> = <span class="float">0.1</span></span>, <span class="param">seed: <span class="type">Optional[int]</span> = <span class="none">None</span></span>,<br>             <span class="param">trigger_events: <span class="type">Optional[List[str]]</span> = <span class="none">None</span></span>)</div>
+                <p>
+                    Simulates agent improvisation under pressure. Models behavioral drift where agents
+                    skip validations, use fallbacks, reorder steps, substitute tools, truncate output,
+                    or approximate results. Trigger events (timeout, rate_limit, error) amplify drift probability.
+                </p>
+                <dl class="props">
+                    <dt>check_step(step_id, recent_errors=None) → Optional[Dict]</dt>
+                    <dd>Check whether drift should be injected. Returns drift event dict with: step_id, drift_type, drift_magnitude, description, cumulative_drift.</dd>
+                    <dt>cumulative_drift</dt>
+                    <dd><code>float</code> — Cumulative drift score (0.0 = no drift, 1.0 = fully diverged).</dd>
+                    <dt>drift_events</dt>
+                    <dd><code>List[Dict]</code> — History of all drift injection events.</dd>
+                    <dt>get_drift_score() → Dict</dt>
+                    <dd>Get comprehensive drift assessment with types, magnitudes, and intensity.</dd>
+                    <dt>make_validator() → Callable</dt>
+                    <dd>Create a validator for <code>assert_no_silent_failure</code>. Adapts strictness based on cumulative drift.</dd>
+                </dl>
+            </div>
+
+            <!-- CascadingFailures -->
+            <h3>CascadingFailures</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">class</span> <span class="cls">CascadingFailures</span>:<br>    <span class="fn">__init__</span>(<span class="param">cascade_probability: <span class="type">float</span> = <span class="float">0.5</span></span>,<br>             <span class="param">max_cascade_depth: <span class="type">int</span> = <span class="int">3</span></span>,<br>             <span class="param">propagation_delay_steps: <span class="type">int</span> = <span class="int">1</span></span>,<br>             <span class="param">seed: <span class="type">Optional[int]</span> = <span class="none">None</span></span>)</div>
+                <p>
+                    Simulates error propagation in multi-agent systems. Models domino effects where
+                    a database timeout cascades to API errors, which cascade to user-facing failures.
+                    Uses common cascade patterns (database→api_server→user_interface).
+                </p>
+                <dl class="props">
+                    <dt>on_failure(failure_event, current_step=0) → List[Dict]</dt>
+                    <dd>Process a failure event and return cascading failures. Each dict has: triggered_by, tool_name, error_type, cascade_depth, step_id, message.</dd>
+                    <dt>summary() → Dict</dt>
+                    <dd>Get summary with total_cascades, active_chains, max_depth_reached.</dd>
+                    <dt>make_validator() → Callable</dt>
+                    <dd>Create a validator for <code>assert_no_silent_failure</code>.</dd>
+                </dl>
+            </div>
+
+            <!-- NetworkPartition -->
+            <h3>NetworkPartition</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">class</span> <span class="cls">NetworkPartition</span>:<br>    <span class="fn">__init__</span>(<span class="param">connectivity: <span class="type">Dict[str, List[str]]</span></span>,<br>             <span class="param">partition_probability: <span class="type">float</span> = <span class="float">1.0</span></span>,<br>             <span class="param">seed: <span class="type">Optional[int]</span> = <span class="none">None</span></span>,<br>             <span class="param">heal_after_calls: <span class="type">Optional[int]</span> = <span class="none">None</span></span>)</div>
+                <p>
+                    Simulates network partitions between services using a connectivity matrix.
+                    Calls between disconnected services fail with <code>TimeoutError</code>.
+                    Supports partition healing after a configured number of failed calls.
+                </p>
+                <dl class="props">
+                    <dt>is_reachable(source, target) → bool</dt>
+                    <dd>Check if source can reach target given current connectivity.</dd>
+                    <dt>wrap(tool) → ChaosToolWrapper</dt>
+                    <dd>Wrap a MockTool with network partition simulation.</dd>
+                    <dt>make_validator() → Callable</dt>
+                    <dd>Create a validator for <code>assert_no_silent_failure</code>.</dd>
+                </dl>
+            </div>
+
+            <!-- ClockSkew -->
+            <h3>ClockSkew</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">class</span> <span class="cls">ClockSkew</span>:<br>    <span class="fn">__init__</span>(<span class="param">skew_seconds: <span class="type">float</span> = <span class="float">0.0</span></span>, <span class="param">drift_rate: <span class="type">float</span> = <span class="float">0.0</span></span>,<br>             <span class="param">affected_tools: <span class="type">Optional[List[str]]</span> = <span class="none">None</span></span>,<br>             <span class="param">seed: <span class="type">Optional[int]</span> = <span class="none">None</span></span>)</div>
+                <p>
+                    Simulates clock skew between services. Causes timestamp mismatches, session expiration
+                    issues, and cache invalidation bugs. Modifies timestamps on tool calls and responses.
+                    Supports progressive drift per call.
+                </p>
+                <dl class="props">
+                    <dt>current_skew</dt>
+                    <dd><code>float</code> — Current effective clock skew in seconds.</dd>
+                    <dt>get_skewed_timestamp(tool_name=None) → float</dt>
+                    <dd>Get a timestamp with the current skew applied.</dd>
+                    <dt>wrap(tool) → ChaosToolWrapper</dt>
+                    <dd>Wrap a MockTool with clock skew simulation.</dd>
+                    <dt>make_validator() → Callable</dt>
+                    <dd>Create a validator for <code>assert_no_silent_failure</code>.</dd>
+                </dl>
+            </div>
+
+            <!-- MemoryPressure -->
+            <h3>MemoryPressure</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">class</span> <span class="cls">MemoryPressure</span>:<br>    <span class="fn">__init__</span>(<span class="param">max_context_tokens: <span class="type">int</span> = <span class="int">4096</span></span>,<br>             <span class="param">pressure_threshold: <span class="type">float</span> = <span class="float">0.8</span></span>,<br>             <span class="param">eviction_strategy: <span class="type">str</span> = <span class="str">"fifo"</span></span>,<br>             <span class="param">gc_pause_ms: <span class="type">float</span> = <span class="float">0.0</span></span>,<br>             <span class="param">oom_probability: <span class="type">float</span> = <span class="float">0.0</span></span>,<br>             <span class="param">seed: <span class="type">Optional[int]</span> = <span class="none">None</span></span>)</div>
+                <p>
+                    Simulates memory pressure and context window exhaustion. Models OOM kills, context
+                    window hard limits, and garbage collection pauses. Eviction strategies:
+                    <code>fifo</code> (oldest first, 20%), <code>priority</code> (least important, 30%),
+                    <code>random</code> (15–25%).
+                </p>
+                <dl class="props">
+                    <dt>simulate_token_usage(tokens: int) → Optional[str]</dt>
+                    <dd>Simulate adding tokens to context. Returns None if successful, error message if OOM or eviction occurred.</dd>
+                    <dt>current_usage</dt>
+                    <dd><code>int</code> — Current context usage in tokens.</dd>
+                    <dt>usage_percentage</dt>
+                    <dd><code>float</code> — Current usage as percentage (0.0–1.0).</dd>
+                    <dt>under_pressure</dt>
+                    <dd><code>bool</code> — Whether context is above pressure threshold.</dd>
+                    <dt>wrap(tool) → ChaosToolWrapper</dt>
+                    <dd>Wrap a MockTool with memory pressure simulation.</dd>
+                    <dt>make_validator() → Callable</dt>
+                    <dd>Create a validator for <code>assert_no_silent_failure</code>.</dd>
+                </dl>
+            </div>
+
+            <!-- ChaosBudget -->
+            <h3>ChaosBudget</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">class</span> <span class="cls">ChaosBudget</span>:<br>    <span class="fn">__init__</span>(<span class="param">max_failures: <span class="type">int</span> = <span class="int">5</span></span>)</div>
+                <p>
+                    Manages a budget of failures for a test run. Tracks total failures across all
+                    injectors and enforces a hard cap. Once exhausted, no more failures are injected.
+                    Supports fluent API for composing multiple injectors.
+                </p>
+                <div class="sig" style="margin-top: 8px; font-size: 0.85rem;">chaos = (ChaosBudget(max_failures=3)<br>    .add(ToolFailureInjector(tool_name="search", failure_type="timeout"))<br>    .add(LLMFailureInjector(failure_type="rate_limit")))</div>
+                <dl class="props">
+                    <dt>add(injector) → ChaosBudget</dt>
+                    <dd>Add a failure injector. Returns self for fluent chaining.</dd>
+                    <dt>total_injected</dt>
+                    <dd><code>int</code> — Total failures injected across all injectors.</dd>
+                    <dt>remaining</dt>
+                    <dd><code>int</code> — Remaining failures in the budget (-1 if unlimited).</dd>
+                    <dt>exhausted</dt>
+                    <dd><code>bool</code> — Whether the failure budget is exhausted.</dd>
+                    <dt>can_inject() → bool</dt>
+                    <dd>Check whether more failures can be injected.</dd>
+                    <dt>check_budget()</dt>
+                    <dd>Raise <code>ChaosBudgetExhausted</code> if budget is exhausted.</dd>
+                    <dt>records</dt>
+                    <dd><code>List[InjectionRecord]</code> — All injection records, sorted by timestamp.</dd>
+                    <dt>records_by_type / records_by_failure</dt>
+                    <dd>Injection records grouped by injector type or failure type.</dd>
+                    <dt>summary() → Dict</dt>
+                    <dd>Get summary with max_failures, total_injected, remaining, exhausted, injector details.</dd>
+                    <dt>reset()</dt>
+                    <dd>Reset all injectors and clear injection history.</dd>
+                </dl>
+            </div>
+
+            <!-- ChaosBudgetExhausted -->
+            <div class="api-card">
+                <div class="sig"><span class="kw">class</span> <span class="cls">ChaosBudgetExhausted</span>(<span class="type">Exception</span>):</div>
+                <p>Raised when the chaos failure budget is exhausted. Catch this to handle budget limits gracefully.</p>
+            </div>
+
+            <!-- ChaosToolWrapper -->
+            <div class="api-card">
+                <div class="sig"><span class="kw">class</span> <span class="cls">ChaosToolWrapper</span>:<br>    <span class="fn">__init__</span>(<span class="param">tool: <span class="type">MockTool</span></span>, <span class="param">injector: <span class="type">ToolFailureInjector</span></span>)</div>
+                <p>
+                    Callable wrapper that intercepts tool calls for failure injection. Delegates to the
+                    original tool when no injection occurs, preserving call recording and response behavior.
+                    Access the underlying tool via the <code>tool</code> property.
+                </p>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- sentinel.runner -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <div class="api-section" id="sentinel.runner">
+            <h2><code>sentinel.runner</code> — Test Runner</h2>
+            <p style="color: var(--fg-secondary); margin-bottom: 16px;">
+                Pytest-native test execution with declarative scenarios. Provides the <code>@sentinel_test</code> decorator
+                and the <code>ScenarioRunner</code> for programmatic scenario execution.
+            </p>
+
+            <div class="callout">
+                <strong>Imports:</strong>
+                <code>from sentinel.runner import sentinel_test, ScenarioRunner, SentinelScenario, SentinelResult</code>
+            </div>
+
+            <!-- AgentConfig -->
+            <h3>AgentConfig</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">@dataclass</span><br><span class="kw">class</span> <span class="cls">AgentConfig</span>:<br>    <span class="param">agent_type: <span class="type">Optional[str]</span> = <span class="none">None</span></span><br>    <span class="param">model: <span class="type">str</span> = <span class="str">"unknown"</span></span><br>    <span class="param">tools: <span class="type">List[str]</span></span><br>    <span class="param">prompt: <span class="type">str</span> = <span class="str">""</span></span><br>    <span class="param">kwargs: <span class="type">Dict[str, Any]</span></span><br>    <span class="param">factory: <span class="type">Optional[Callable]</span> = <span class="none">None</span></span></div>
+                <p>Configuration for instantiating an agent under test. Describes HOW to create the agent. If <code>factory</code> is provided, it takes precedence over <code>agent_type</code>.</p>
+            </div>
+
+            <!-- SentinelScenario -->
+            <h3>SentinelScenario / TestScenario</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">@dataclass</span><br><span class="kw">class</span> <span class="cls">SentinelScenario</span>:<br>    <span class="param">id: <span class="type">str</span></span><br>    <span class="param">name: <span class="type">str</span></span><br>    <span class="param">description: <span class="type">str</span> = <span class="str">""</span></span><br>    <span class="param">agent_config: <span class="type">Optional[AgentConfig]</span> = <span class="none">None</span></span><br>    <span class="param">environment: <span class="type">Optional[Environment]</span> = <span class="none">None</span></span><br>    <span class="param">env_config: <span class="type">Dict[str, Any]</span></span><br>    <span class="param">chaos_config: <span class="type">Dict[str, Any]</span></span><br>    <span class="param">task: <span class="type">str</span> = <span class="str">""</span></span><br>    <span class="param">assertions: <span class="type">List[Callable]</span></span><br>    <span class="param">timeout_seconds: <span class="type">int</span> = <span class="int">30</span></span><br>    <span class="param">tags: <span class="type">List[str]</span></span></div>
+                <p>
+                    A declarative test scenario. Encapsulates everything needed to run a behavioral test:
+                    agent config, environment setup, chaos injection rules, task description, and assertions.
+                    Can be defined in code or loaded from YAML/JSON files.
+                </p>
+                <p style="margin-top: 4px;"><code>TestScenario</code> is an alias for <code>SentinelScenario</code> (canonical public name).</p>
+            </div>
+
+            <!-- SentinelAssertionResult -->
+            <h3>SentinelAssertionResult</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">@dataclass</span><br><span class="kw">class</span> <span class="cls">SentinelAssertionResult</span>:<br>    <span class="param">assertion_name: <span class="type">str</span></span><br>    <span class="param">passed: <span class="type">bool</span></span><br>    <span class="param">error_message: <span class="type">Optional[str]</span> = <span class="none">None</span></span><br>    <span class="param">duration_ms: <span class="type">float</span> = <span class="float">0.0</span></span></div>
+                <p>Result of a single assertion check within a scenario run.</p>
+            </div>
+
+            <!-- SentinelResult -->
+            <h3>SentinelResult / TestResult</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">@dataclass</span><br><span class="kw">class</span> <span class="cls">SentinelResult</span>:<br>    <span class="param">scenario_id: <span class="type">str</span></span><br>    <span class="param">scenario_name: <span class="type">str</span></span><br>    <span class="param">passed: <span class="type">bool</span></span><br>    <span class="param">trace: <span class="type">AgentTrace</span></span><br>    <span class="param">assertion_results: <span class="type">List[SentinelAssertionResult]</span></span><br>    <span class="param">duration_ms: <span class="type">float</span> = <span class="float">0.0</span></span><br>    <span class="param">error: <span class="type">Optional[str]</span> = <span class="none">None</span></span><br>    <span class="param">timestamp: <span class="type">float</span></span></div>
+                <p>Outcome of running a single test scenario. Captures pass/fail, the full trace, assertion results, and timing.</p>
+                <dl class="props">
+                    <dt>summary</dt>
+                    <dd><code>str</code> — One-line human-readable summary (e.g., <code>"[PASS] Refund test (3/3 assertions, 120ms)"</code>).</dd>
+                    <dt>failed_assertions() → List[SentinelAssertionResult]</dt>
+                    <dd>Get all failed assertions.</dd>
+                </dl>
+                <p style="margin-top: 4px;"><code>TestResult</code> is an alias for <code>SentinelResult</code> (canonical public name).</p>
+            </div>
+
+            <!-- ScenarioRunner -->
+            <h3>ScenarioRunner</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">class</span> <span class="cls">ScenarioRunner</span>:<br>    <span class="fn">run</span>(<span class="param">scenario: <span class="type">SentinelScenario</span></span>, <span class="param">agent_fn: <span class="type">Optional[Callable]</span> = <span class="none">None</span></span>,<br>        <span class="param">env: <span class="type">Optional[Environment]</span> = <span class="none">None</span></span>) → <span class="type">SentinelResult</span><br>    <span class="fn">run_batch</span>(<span class="param">scenarios: <span class="type">List[SentinelScenario]</span></span>,<br>              <span class="param">agent_fn: <span class="type">Optional[Callable]</span> = <span class="none">None</span></span>) → <span class="type">List[SentinelResult]</span></div>
+                <p>
+                    Executes test scenarios against agents. The runner: (1) builds the environment from config,
+                    (2) constructs the agent, (3) creates an AgentTrace, (4) invokes the agent's task,
+                    (5) runs assertions against the trace, (6) returns a SentinelResult.
+                </p>
+                <p style="margin-top: 4px;">
+                    The <code>agent_fn</code> callable receives <code>(task, env, trace)</code> and should run
+                    the agent, recording behavior into the trace.
+                </p>
+            </div>
+
+            <!-- sentinel_test -->
+            <h3>sentinel_test (decorator)</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">def</span> <span class="fn">sentinel_test</span>(<br>    <span class="param">env: <span class="type">Optional[Union[Environment, EnvironmentBuilder]]</span> = <span class="none">None</span></span>,<br>    <span class="param">chaos: <span class="type">Any</span> = <span class="none">None</span></span>,<br>    <span class="param">task: <span class="type">str</span> = <span class="str">""</span></span>,<br>    <span class="param">timeout_seconds: <span class="type">int</span> = <span class="int">30</span></span>,<br>    <span class="param">tags: <span class="type">Optional[List[str]]</span> = <span class="none">None</span></span>,<br>) → Callable</div>
+                <p>
+                    Pytest decorator for declarative sentinel test definition. Wraps a test function so it
+                    receives a pre-built <code>trace</code> (AgentTrace) and <code>env</code> (Environment) as
+                    keyword arguments. Handles environment building, chaos wiring, and timing.
+                </p>
+                <div class="sig" style="margin-top: 8px; font-size: 0.85rem;">@sentinel_test(<br>    env=(EnvironmentBuilder().mock_tool("search", response=SEARCH_RESULTS).build()),<br>    task="Search for refund policy",<br>)<br>def test_search_agent(trace, env):<br>    # Run agent, then assert<br>    assert_tool_called(trace, "search")</div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- sentinel.reporting -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <div class="api-section" id="sentinel.reporting">
+            <h2><code>sentinel.reporting</code> — Reports &amp; Regression Detection</h2>
+            <p style="color: var(--fg-secondary); margin-bottom: 16px;">
+                Regression report generation, trace diffing, HTML report output, and JUnit XML for CI consumption.
+            </p>
+
+            <div class="callout">
+                <strong>Imports:</strong>
+                <code>from sentinel.reporting import RegressionReport, build_regression_report, generate_html_report, generate_junit_xml, diff_traces</code>
+            </div>
+
+            <!-- Enums -->
+            <h3>Enums</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">class</span> <span class="cls">ResultDelta</span>(<span class="type">str, Enum</span>):</div>
+                <table class="enum-table">
+                    <thead><tr><th>Value</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td>new_pass</td><td>Scenario was failing, now passes (fix)</td></tr>
+                        <tr><td>new_fail</td><td>Scenario was passing, now fails (regression)</td></tr>
+                        <tr><td>still_pass</td><td>Scenario passes in both runs</td></tr>
+                        <tr><td>still_fail</td><td>Scenario fails in both runs</td></tr>
+                        <tr><td>new_scenario</td><td>Scenario exists only in current run</td></tr>
+                        <tr><td>removed</td><td>Scenario exists only in baseline</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- ScenarioDelta -->
+            <h3>ScenarioDelta</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">@dataclass</span><br><span class="kw">class</span> <span class="cls">ScenarioDelta</span>:<br>    <span class="param">scenario_id: <span class="type">str</span></span><br>    <span class="param">scenario_name: <span class="type">str</span></span><br>    <span class="param">delta: <span class="type">ResultDelta</span></span><br>    <span class="param">baseline_passed: <span class="type">Optional[bool]</span> = <span class="none">None</span></span><br>    <span class="param">current_passed: <span class="type">Optional[bool]</span> = <span class="none">None</span></span><br>    <span class="param">baseline_duration_ms: <span class="type">Optional[float]</span> = <span class="none">None</span></span><br>    <span class="param">current_duration_ms: <span class="type">Optional[float]</span> = <span class="none">None</span></span><br>    <span class="param">new_failures: <span class="type">List[str]</span></span><br>    <span class="param">fixed_assertions: <span class="type">List[str]</span></span><br>    <span class="param">trace_diff: <span class="type">Optional[Dict]</span> = <span class="none">None</span></span></div>
+                <p>Delta for a single scenario between baseline and current run.</p>
+                <dl class="props">
+                    <dt>is_regression</dt>
+                    <dd><code>bool</code> — True if this is a new failure (regression).</dd>
+                    <dt>is_fix</dt>
+                    <dd><code>bool</code> — True if this is a new pass (fix).</dd>
+                </dl>
+            </div>
+
+            <!-- RegressionReport -->
+            <h3>RegressionReport</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">@dataclass</span><br><span class="kw">class</span> <span class="cls">RegressionReport</span>:<br>    <span class="param">baseline_label: <span class="type">str</span> = <span class="str">""</span></span><br>    <span class="param">current_label: <span class="type">str</span> = <span class="str">""</span></span><br>    <span class="param">deltas: <span class="type">List[ScenarioDelta]</span></span><br>    <span class="param">baseline_timestamp: <span class="type">float</span> = <span class="float">0.0</span></span><br>    <span class="param">current_timestamp: <span class="type">float</span></span><br>    <span class="param">metadata: <span class="type">Dict[str, Any]</span></span></div>
+                <p>Full regression report comparing baseline vs current run. Captures deltas between two sets of test results, identifying regressions, fixes, and unchanged scenarios.</p>
+                <dl class="props">
+                    <dt>total_scenarios</dt>
+                    <dd><code>int</code> — Total scenarios compared.</dd>
+                    <dt>regressions</dt>
+                    <dd><code>List[ScenarioDelta]</code> — Scenarios that went from passing to failing.</dd>
+                    <dt>fixes</dt>
+                    <dd><code>List[ScenarioDelta]</code> — Scenarios that went from failing to passing.</dd>
+                    <dt>still_passing / still_failing</dt>
+                    <dd>Unchanged scenarios.</dd>
+                    <dt>new_scenarios</dt>
+                    <dd>Scenarios only in the current run.</dd>
+                    <dt>has_regressions</dt>
+                    <dd><code>bool</code> — Whether any regressions exist.</dd>
+                    <dt>verdict</dt>
+                    <dd><code>str</code> — One-line verdict: <code>"PASS"</code>, <code>"FAIL"</code> (regressions), or <code>"WARN"</code> (new failures).</dd>
+                    <dt>summary</dt>
+                    <dd><code>str</code> — Human-readable summary.</dd>
+                    <dt>to_dict() → Dict</dt>
+                    <dd>Serialize to dict for JSON output.</dd>
+                </dl>
+            </div>
+
+            <!-- Functions -->
+            <h3>Functions</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">def</span> <span class="fn">build_regression_report</span>(<br>    <span class="param">baseline_results: <span class="type">List[SentinelResult]</span></span>,<br>    <span class="param">current_results: <span class="type">List[SentinelResult]</span></span>,<br>    <span class="param">baseline_label: <span class="type">str</span> = <span class="str">"baseline"</span></span>,<br>    <span class="param">current_label: <span class="type">str</span> = <span class="str">"current"</span></span>,<br>    <span class="param">metadata: <span class="type">Optional[Dict]</span> = <span class="none">None</span></span><br>) → <span class="type">RegressionReport</span></div>
+                <p>Build a RegressionReport by comparing baseline and current results. Matches scenarios by <code>scenario_id</code>.</p>
+            </div>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">def</span> <span class="fn">diff_traces</span>(<br>    <span class="param">baseline: <span class="type">AgentTrace</span></span>,<br>    <span class="param">current: <span class="type">AgentTrace</span></span><br>) → <span class="type">Dict[str, Any]</span></div>
+                <p>
+                    Compare two AgentTraces and return a structural diff. Returns dict with:
+                    <code>tool_calls_added</code>, <code>tool_calls_removed</code>,
+                    <code>tool_call_count_delta</code>, <code>errors_added</code>,
+                    <code>duration_delta_ms</code>, <code>state_changes_added</code>.
+                </p>
+            </div>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">def</span> <span class="fn">generate_html_report</span>(<span class="param">report: <span class="type">RegressionReport</span></span>) → <span class="type">str</span></div>
+                <p>Generate a self-contained HTML regression report. Returns a complete HTML document string with inline CSS. No external dependencies.</p>
+            </div>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">def</span> <span class="fn">generate_junit_xml</span>(<br>    <span class="param">results: <span class="type">List[SentinelResult]</span></span>,<br>    <span class="param">suite_name: <span class="type">str</span> = <span class="str">"sentinel"</span></span><br>) → <span class="type">str</span></div>
+                <p>Generate JUnit XML from a list of test results. Compatible with CI systems (GitHub Actions, GitLab CI, Jenkins). Returns a pretty-printed XML string.</p>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- sentinel.baseline -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <div class="api-section" id="sentinel.baseline">
+            <h2><code>sentinel.baseline</code> — Baseline Persistence</h2>
+            <p style="color: var(--fg-secondary); margin-bottom: 16px;">
+                Recording, loading, listing, and deleting agent execution baselines. Baselines are stored as JSON files
+                in a configurable directory (default: <code>.sentinel/baselines/</code>).
+            </p>
+
+            <div class="callout">
+                <strong>Imports:</strong>
+                <code>from sentinel.baseline import record_baseline, load_baseline, list_baselines, delete_baseline, BaselineMetadata</code>
+            </div>
+
+            <!-- BaselineMetadata -->
+            <h3>BaselineMetadata</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">@dataclass</span><br><span class="kw">class</span> <span class="cls">BaselineMetadata</span>:<br>    <span class="param">label: <span class="type">str</span></span><br>    <span class="param">timestamp: <span class="type">float</span></span><br>    <span class="param">git_sha: <span class="type">str</span> = <span class="str">""</span></span><br>    <span class="param">git_branch: <span class="type">str</span> = <span class="str">""</span></span><br>    <span class="param">tags: <span class="type">List[str]</span></span><br>    <span class="param">description: <span class="type">str</span> = <span class="str">""</span></span><br>    <span class="param">scenario_count: <span class="type">int</span> = <span class="int">0</span></span><br>    <span class="param">pass_count: <span class="type">int</span> = <span class="int">0</span></span><br>    <span class="param">fail_count: <span class="type">int</span> = <span class="int">0</span></span><br>    <span class="param">metadata: <span class="type">Dict[str, Any]</span></span></div>
+                <p>Metadata for a recorded baseline. Stored alongside results in <code>metadata.json</code>.</p>
+            </div>
+
+            <!-- Functions -->
+            <h3>Functions</h3>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">def</span> <span class="fn">record_baseline</span>(<br>    <span class="param">results: <span class="type">List[SentinelResult]</span></span>,<br>    <span class="param">label: <span class="type">str</span></span>,<br>    <span class="param">tags: <span class="type">Optional[List[str]]</span> = <span class="none">None</span></span>,<br>    <span class="param">description: <span class="type">str</span> = <span class="str">""</span></span>,<br>    <span class="param">git_sha: <span class="type">str</span> = <span class="str">""</span></span>,<br>    <span class="param">git_branch: <span class="type">str</span> = <span class="str">""</span></span>,<br>    <span class="param">metadata: <span class="type">Optional[Dict]</span> = <span class="none">None</span></span>,<br>    <span class="param">project_root: <span class="type">Optional[str]</span> = <span class="none">None</span></span><br>) → <span class="type">Path</span></div>
+                <p>
+                    Record a set of results as a baseline. Creates a new baseline directory with metadata
+                    and serialized results. If a baseline with the same label exists, it's overwritten.
+                    Returns the path to the baseline directory.
+                </p>
+            </div>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">def</span> <span class="fn">load_baseline</span>(<br>    <span class="param">label: <span class="type">str</span></span>,<br>    <span class="param">project_root: <span class="type">Optional[str]</span> = <span class="none">None</span></span><br>) → <span class="type">Tuple[BaselineMetadata, List[SentinelResult]]</span></div>
+                <p>Load a previously recorded baseline. Raises <code>FileNotFoundError</code> if the baseline doesn't exist.</p>
+            </div>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">def</span> <span class="fn">list_baselines</span>(<span class="param">project_root: <span class="type">Optional[str]</span> = <span class="none">None</span></span>) → <span class="type">List[str]</span></div>
+                <p>List all baseline labels, sorted newest first.</p>
+            </div>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">def</span> <span class="fn">delete_baseline</span>(<span class="param">label: <span class="type">str</span></span>, <span class="param">project_root: <span class="type">Optional[str]</span> = <span class="none">None</span></span>) → <span class="type">bool</span></div>
+                <p>Delete a baseline by label. Returns True if deleted, False if not found.</p>
+            </div>
+
+            <div class="api-card">
+                <div class="sig"><span class="kw">def</span> <span class="fn">get_baseline_dir</span>(<span class="param">project_root: <span class="type">Optional[str]</span> = <span class="none">None</span></span>) → <span class="type">Path</span></div>
+                <p>Get the baseline directory, creating it if needed. Defaults to <code>.sentinel/baselines/</code> relative to project root.</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); color: var(--fg-muted); font-size: 0.875rem;">
+            <p>Built by <a href="/">Adam Sims</a> · <a href="https://github.com/adam85sims/Sentinel">GitHub</a> · MIT License</p>
         </div>
     </main>
 </div>
