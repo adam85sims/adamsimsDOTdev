@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Reference — Sentinel</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23E95420'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='18' font-family='monospace'>S</text></svg>">
+    <link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<header class="header">
+    <button class="mobile-toggle" aria-label="Menu">☰</button>
+    <a href="/" class="header-brand">
+        <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="6" fill="#E95420"/><path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <h1>Sentinel</h1>
+    </a>
+    <nav class="header-nav">
+        <a href="quickstart.html">Quickstart</a>
+        <a href="chaos.html">Chaos</a>
+        <a href="api.html" class="active">API</a>
+        <a href="https://github.com/adam85sims/Sentinel" target="_blank">GitHub</a>
+    </nav>
+</header>
+
+<div class="layout">
+    <aside class="sidebar">
+        <nav>
+            <div class="nav-group">
+                <div class="nav-group-title">Getting Started</div>
+                <a href="quickstart.html" class="nav-link">Quickstart</a>
+                <a href="installation.html" class="nav-link">Installation</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Core Concepts</div>
+                <a href="mock-tools.html" class="nav-link">Mock Tools</a>
+                <a href="assertions.html" class="nav-link">Assertions</a>
+                <a href="traces.html" class="nav-link">Agent Traces</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Chaos Engineering</div>
+                <a href="chaos.html" class="nav-link">Overview</a>
+                <a href="chaos-presets.html" class="nav-link">Presets</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Advanced</div>
+                <a href="api.html" class="nav-link active">API Reference</a>
+                <a href="ci-cd.html" class="nav-link">CI/CD</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Resources</div>
+                <a href="faq.html" class="nav-link">FAQ</a>
+                <a href="https://github.com/adam85sims/Sentinel" target="_blank" class="nav-link">GitHub →</a>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="main">
+        <div class="page-header">
+            <h1>API Reference</h1>
+            <p class="subtitle">Complete public API documentation for all Sentinel modules.</p>
+        </div>
+
+        <div class="content">
+            <!-- sentinel.env -->
+            <h2 id="env">sentinel.env</h2>
+            <p>Mock environment layer for agent testing.</p>
+
+            <h3>MockTool</h3>
+            <pre><code>class MockTool:
+    name: str
+    response: Any = None
+    response_fn: Callable = None
+    side_effect: Exception = None
+    latency_ms: float = 0.0
+    error_probability: float = 0.0
+    error_factory: Callable = None
+
+    def __call__(self, **kwargs) -> Any</code></pre>
+
+            <h3>MockAPI</h3>
+            <pre><code>class MockAPI:
+    base_url: str
+    routes: Dict[str, Any]</code></pre>
+
+            <h3>EnvironmentBuilder</h3>
+            <pre><code>class EnvironmentBuilder:
+    def mock_tool(self, name: str, **kwargs) -> "EnvironmentBuilder"
+    def mock_api(self, base_url: str, **kwargs) -> "EnvironmentBuilder"
+    def mock_database(self, name: str) -> "EnvironmentBuilder"
+    def with_rate_limit(self, calls_per_minute: int) -> "EnvironmentBuilder"
+    def build(self) -> Environment</code></pre>
+
+            <h3>Exceptions</h3>
+            <pre><code>class MockToolError(Exception):
+    status_code: int = 500
+
+class RateLimitError(MockToolError):
+    retry_after: float = 60.0
+    status_code: int = 429
+
+class TimeoutError(MockToolError):
+    status_code: int = 408</code></pre>
+
+            <!-- sentinel.models -->
+            <h2 id="models">sentinel.models</h2>
+            <p>Core data structures for agent traces.</p>
+
+            <pre><code>class StepAction(str, Enum):
+    PLAN, TOOL_CALL, REASON, RESPOND, ERROR
+
+class ErrorSeverity(str, Enum):
+    LOW, MEDIUM, HIGH, CRITICAL
+
+class ToolCall:
+    tool_name: str
+    arguments: Dict[str, Any]
+    result: Any = None
+    duration_ms: float = 0.0
+    error: Optional[str] = None
+
+class AgentTrace:
+    steps: List[Step]
+    tool_calls: List[ToolCall]
+    def add_step(self, step: Step) -> None
+    def add_tool_call(self, tool_call: ToolCall) -> None</code></pre>
+
+            <!-- sentinel.assertions -->
+            <h2 id="assertions">sentinel.assertions</h2>
+            <p>20+ behavioral assertions. See <a href="assertions.html">Assertions</a> for full details.</p>
+
+            <pre><code># Tool Call
+assert_tool_called(trace, tool_name)
+assert_tool_not_called(trace, tool_name)
+assert_tool_call_order(trace, expected)
+assert_tool_call_count(trace, tool_name, expected_count)
+assert_no_tool_errors(trace)
+
+# State
+assert_state_consistent(trace)
+assert_state_changed(trace, key)
+
+# Resilience
+assert_graceful_degradation(trace, error_count)
+assert_no_silent_failure(trace, validators)
+
+# Performance
+assert_latency(trace, max_ms)
+assert_step_count(trace, min_steps, max_steps)</code></pre>
+
+            <!-- sentinel.chaos -->
+            <h2 id="chaos">sentinel.chaos</h2>
+            <p>Failure injection for behavioral testing. See <a href="chaos.html">Chaos Overview</a>.</p>
+
+            <h3>Injectors</h3>
+            <pre><code>class ToolFailureInjector:
+    def __init__(self, tool_name, failure_type="error",
+                 probability=1.0, seed=None)
+    def wrap(self, mock: MockTool) -> ChaosToolWrapper
+    def make_validator(self) -> Callable
+
+class NetworkPartition:
+    def __init__(self, connectivity, partition_probability=1.0,
+                 seed=None, heal_after_calls=None)
+    def wrap(self, mock: MockTool) -> ChaosToolWrapper
+    def is_reachable(self, source, target) -> bool
+
+class ClockSkew:
+    def __init__(self, skew_seconds=0.0, drift_rate=0.0,
+                 affected_tools=None, seed=None)
+    def get_skewed_timestamp(self, tool_name=None) -> float
+
+class MemoryPressure:
+    def __init__(self, max_context_tokens=4096,
+                 pressure_threshold=0.8, eviction_strategy="fifo",
+                 gc_pause_ms=0.0, oom_probability=0.0, seed=None)
+    def simulate_token_usage(self, tokens) -> Optional[str]
+
+class ContextDegradation:
+    def __init__(self, strategy="truncation", start_step=1,
+                 degradation_rate=0.1, seed=None)
+
+class CascadingFailures:
+    def __init__(self, cascade_probability=0.5,
+                 max_cascade_depth=3, seed=None)</code></pre>
+
+            <!-- sentinel.runner -->
+            <h2 id="runner">sentinel.runner</h2>
+            <p>Test execution and scenario management.</p>
+
+            <pre><code>class AgentConfig:
+    agent_type: Optional[str] = None
+    model: str = "unknown"
+    tools: List[str] = []
+    factory: Optional[Callable] = None
+
+class ScenarioRunner:
+    def run(self, scenario, agent_fn=None) -> SentinelResult
+    def run_batch(self, scenarios, agent_fn=None) -> List[SentinelResult]
+
+def sentinel_test(env=None, task="", **kwargs) -> Callable</code></pre>
+
+            <!-- sentinel.reporting -->
+            <h2 id="reporting">sentinel.reporting</h2>
+            <p>Regression detection and report generation.</p>
+
+            <pre><code>class RegressionReport:
+    def __init__(self, baseline, current)
+    def to_dict(self) -> dict
+    def to_html(self) -> str
+    def to_junit_xml(self) -> str</code></pre>
+
+            <!-- sentinel.baseline -->
+            <h2 id="baseline">sentinel.baseline</h2>
+            <p>JSON-based baseline storage with git integration.</p>
+
+            <pre><code>def record_baseline(results, path=None) -> str
+def load_baseline(path) -> dict
+def compare_baselines(old, new) -> RegressionReport</code></pre>
+
+            <!-- CLI -->
+            <h2 id="cli">CLI Commands</h2>
+            <pre><code>sentinel run --path scenario.yaml     # Run a scenario
+sentinel list                         # List scenarios
+sentinel info &lt;scenario&gt;              # Show scenario details
+sentinel baseline record              # Record baseline
+sentinel baseline show                # Show baseline
+sentinel diff                         # Compare baselines
+sentinel report                       # Generate report</code></pre>
+        </div>
+    </main>
+</div>
+
+<script src="../js/docs.js"></script>
+</body>
+</html>

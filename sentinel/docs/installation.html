@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Installation — Sentinel</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23E95420'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='18' font-family='monospace'>S</text></svg>">
+    <link rel="stylesheet" href="css/docs.css">
+</head>
+<body>
+
+<header class="header">
+    <button class="mobile-toggle" aria-label="Menu">☰</button>
+    <a href="/" class="header-brand">
+        <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="6" fill="#E95420"/><path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <h1>Sentinel</h1>
+    </a>
+    <nav class="header-nav">
+        <a href="quickstart.html" class="active">Quickstart</a>
+        <a href="chaos.html">Chaos</a>
+        <a href="api.html">API</a>
+        <a href="https://github.com/adam85sims/Sentinel" target="_blank">GitHub</a>
+    </nav>
+</header>
+
+<div class="layout">
+    <aside class="sidebar">
+        <nav>
+            <div class="nav-group">
+                <div class="nav-group-title">Getting Started</div>
+                <a href="quickstart.html" class="nav-link">Quickstart</a>
+                <a href="installation.html" class="nav-link active">Installation</a>
+                <a href="first-test.html" class="nav-link">Your First Test</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Core Concepts</div>
+                <a href="mock-tools.html" class="nav-link">Mock Tools</a>
+                <a href="assertions.html" class="nav-link">Assertions</a>
+                <a href="traces.html" class="nav-link">Agent Traces</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Chaos Engineering</div>
+                <a href="chaos.html" class="nav-link">Overview</a>
+                <a href="chaos-presets.html" class="nav-link">Presets</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Framework Adapters</div>
+                <a href="adapters-langchain.html" class="nav-link">LangChain</a>
+                <a href="adapters-crewai.html" class="nav-link">CrewAI</a>
+                <a href="adapters-openai.html" class="nav-link">OpenAI SDK</a>
+                <a href="adapters-custom.html" class="nav-link">Custom Adapters</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Advanced</div>
+                <a href="scenarios.html" class="nav-link">YAML Scenarios</a>
+                <a href="baselines.html" class="nav-link">Baselines</a>
+                <a href="ci-cd.html" class="nav-link">CI/CD Integration</a>
+                <a href="api.html" class="nav-link">API Reference</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Resources</div>
+                <a href="governance.html" class="nav-link">Governance</a>
+                <a href="faq.html" class="nav-link">FAQ</a>
+                <a href="https://github.com/adam85sims/Sentinel" target="_blank" class="nav-link">GitHub →</a>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="main">
+        <div class="page-header">
+            <h1>Installation</h1>
+            <p class="subtitle">Get Sentinel running in under a minute.</p>
+        </div>
+
+        <div class="content">
+            <h2>Requirements</h2>
+            <ul>
+                <li>Python 3.11 or later</li>
+                <li>pip or any PEP 517-compatible package manager</li>
+            </ul>
+
+            <h2>Install from GitHub</h2>
+            <p>The recommended way to install Sentinel:</p>
+
+            <h3>Minimal install (zero dependencies)</h3>
+            <pre><code>pip install git+https://github.com/adam85sims/Sentinel.git</code></pre>
+
+            <h3>With LangChain adapter</h3>
+            <pre><code>pip install "git+https://github.com/adam85sims/Sentinel.git[langchain]"</code></pre>
+
+            <h3>With all adapters</h3>
+            <pre><code>pip install "git+https://github.com/adam85sims/Sentinel.git[adapters]"</code></pre>
+
+            <h3>Development install</h3>
+            <pre><code>git clone https://github.com/adam85sims/Sentinel.git
+cd Sentinel
+pip install -e ".[dev]"</code></pre>
+
+            <h2>Optional Dependencies</h2>
+            <p>Sentinel's core has zero dependencies. Install only what you need:</p>
+
+            <table>
+                <thead>
+                    <tr><th>Extra</th><th>Install</th><th>Provides</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>langchain</code></td><td><code>pip install sentinel[langchain]</code></td><td>LangChain adapter</td></tr>
+                    <tr><td><code>crewai</code></td><td><code>pip install sentinel[crewai]</code></td><td>CrewAI adapter</td></tr>
+                    <tr><td><code>openai</code></td><td><code>pip install sentinel[openai]</code></td><td>OpenAI SDK adapter</td></tr>
+                    <tr><td><code>governance</code></td><td><code>pip install sentinel[governance]</code></td><td>YAML config support</td></tr>
+                    <tr><td><code>otel</code></td><td><code>pip install sentinel[otel]</code></td><td>OpenTelemetry export</td></tr>
+                    <tr><td><code>dev</code></td><td><code>pip install sentinel[dev]</code></td><td>pytest, ruff, coverage</td></tr>
+                    <tr><td><code>all</code></td><td><code>pip install sentinel[all]</code></td><td>Everything above</td></tr>
+                </tbody>
+            </table>
+
+            <h2>Verify Installation</h2>
+            <pre><code>python -c "import sentinel; print(sentinel.__version__)"
+# Should print: 0.1.0</code></pre>
+
+            <h2>Run Tests</h2>
+            <pre><code>cd Sentinel
+pytest tests/ -v</code></pre>
+
+            <div class="callout callout-success">
+                <strong>✅ You're ready!</strong>
+                Head to <a href="first-test.html">Your First Test</a> to write your first behavioral test.
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="js/docs.js"></script>
+</body>
+</html>

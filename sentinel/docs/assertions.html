@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assertions — Sentinel</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23E95420'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='18' font-family='monospace'>S</text></svg>">
+    <link rel="stylesheet" href="css/docs.css">
+</head>
+<body>
+
+<header class="header">
+    <button class="mobile-toggle" aria-label="Menu">☰</button>
+    <a href="/" class="header-brand">
+        <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="6" fill="#E95420"/><path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <h1>Sentinel</h1>
+    </a>
+    <nav class="header-nav">
+        <a href="quickstart.html">Quickstart</a>
+        <a href="chaos.html">Chaos</a>
+        <a href="api.html" class="active">API</a>
+        <a href="https://github.com/adam85sims/Sentinel" target="_blank">GitHub</a>
+    </nav>
+</header>
+
+<div class="layout">
+    <aside class="sidebar">
+        <nav>
+            <div class="nav-group">
+                <div class="nav-group-title">Getting Started</div>
+                <a href="quickstart.html" class="nav-link">Quickstart</a>
+                <a href="installation.html" class="nav-link">Installation</a>
+                <a href="first-test.html" class="nav-link">Your First Test</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Core Concepts</div>
+                <a href="mock-tools.html" class="nav-link">Mock Tools</a>
+                <a href="assertions.html" class="nav-link active">Assertions</a>
+                <a href="traces.html" class="nav-link">Agent Traces</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Chaos Engineering</div>
+                <a href="chaos.html" class="nav-link">Overview</a>
+                <a href="chaos-presets.html" class="nav-link">Presets</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Advanced</div>
+                <a href="scenarios.html" class="nav-link">YAML Scenarios</a>
+                <a href="baselines.html" class="nav-link">Baselines</a>
+                <a href="ci-cd.html" class="nav-link">CI/CD Integration</a>
+                <a href="api.html" class="nav-link">API Reference</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Resources</div>
+                <a href="faq.html" class="nav-link">FAQ</a>
+                <a href="https://github.com/adam85sims/Sentinel" target="_blank" class="nav-link">GitHub →</a>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="main">
+        <div class="page-header">
+            <h1>Assertions</h1>
+            <p class="subtitle">20+ behavioral assertions across 5 categories.</p>
+        </div>
+
+        <div class="content">
+            <p>Assertions verify agent behavior, not output quality. They read from <code>AgentTrace</code> and check what the agent actually <em>did</em>.</p>
+
+            <h2>Tool Call Assertions</h2>
+            <table>
+                <thead><tr><th>Assertion</th><th>What it checks</th></tr></thead>
+                <tbody>
+                    <tr><td><code>assert_tool_called(trace, "search")</code></td><td>Tool was called at least once</td></tr>
+                    <tr><td><code>assert_tool_not_called(trace, "delete")</code></td><td>Tool was never called</td></tr>
+                    <tr><td><code>assert_tool_call_order(trace, ["search", "email"])</code></td><td>Tools called in exact order</td></tr>
+                    <tr><td><code>assert_tool_call_count(trace, "search", expected_count=1)</code></td><td>Called exactly N times</td></tr>
+                    <tr><td><code>assert_no_tool_errors(trace)</code></td><td>No tool calls produced errors</td></tr>
+                    <tr><td><code>assert_tool_called_at_most(trace, "api", max_count=3)</code></td><td>Called at most N times</td></tr>
+                    <tr><td><code>assert_tool_allowlist(trace, ["search", "email"])</code></td><td>Only these tools were called</td></tr>
+                    <tr><td><code>assert_tool_denylist(trace, ["delete", "drop"])</code></td><td>These tools were never called</td></tr>
+                </tbody>
+            </table>
+
+            <h2>State Assertions</h2>
+            <table>
+                <thead><tr><th>Assertion</th><th>What it checks</th></tr></thead>
+                <tbody>
+                    <tr><td><code>assert_state_consistent(trace)</code></td><td>No state inconsistencies detected</td></tr>
+                    <tr><td><code>assert_state_changed(trace, "user_count")</code></td><td>State key was modified</td></tr>
+                    <tr><td><code>assert_state_not_stale(trace, "cache", max_age_seconds=60)</code></td><td>State is fresh</td></tr>
+                    <tr><td><code>assert_state_consistent_across_traces(traces, "config")</code></td><td>Same state across runs</td></tr>
+                    <tr><td><code>assert_state_no_collisions(traces)</code></td><td>No concurrent state conflicts</td></tr>
+                </tbody>
+            </table>
+
+            <h2>Governance Assertions</h2>
+            <table>
+                <thead><tr><th>Assertion</th><th>What it checks</th></tr></thead>
+                <tbody>
+                    <tr><td><code>assert_permission_respected(trace, "read_only")</code></td><td>Agent respected permission boundary</td></tr>
+                    <tr><td><code>assert_permission_violated(trace, "admin")</code></td><td>Agent tried to exceed permissions</td></tr>
+                    <tr><td><code>assert_tool_called_at_most(trace, "api", max_count=10)</code></td><td>Rate limit respected</td></tr>
+                    <tr><td><code>assert_approval_before_action(trace, "deploy", "confirm")</code></td><td>Got approval before action</td></tr>
+                </tbody>
+            </table>
+
+            <h2>Resilience Assertions</h2>
+            <table>
+                <thead><tr><th>Assertion</th><th>What it checks</th></tr></thead>
+                <tbody>
+                    <tr><td><code>assert_graceful_degradation(trace, error_count)</code></td><td>Agent handled errors gracefully</td></tr>
+                    <tr><td><code>assert_no_silent_failure(trace, validators)</code></td><td>No failures were silently ignored</td></tr>
+                </tbody>
+            </table>
+
+            <h2>Performance Assertions</h2>
+            <table>
+                <thead><tr><th>Assertion</th><th>What it checks</th></tr></thead>
+                <tbody>
+                    <tr><td><code>assert_latency(trace, max_ms=5000)</code></td><td>Total execution time within limit</td></tr>
+                    <tr><td><code>assert_token_usage(trace, max_tokens=10000)</code></td><td>Token usage within limit</td></tr>
+                    <tr><td><code>assert_step_count(trace, min_steps=2, max_steps=10)</code></td><td>Agent took reasonable steps</td></tr>
+                    <tr><td><code>assert_tool_latency(trace, "search", max_ms=1000)</code></td><td>Specific tool latency within limit</td></tr>
+                </tbody>
+            </table>
+
+            <h2>Example</h2>
+            <pre><code>from sentinel.assertions import (
+    assert_tool_called,
+    assert_tool_call_order,
+    assert_no_tool_errors,
+    assert_graceful_degradation,
+)
+
+# After running your agent through the mock environment:
+assert_tool_called(trace, "search")
+assert_tool_called(trace, "email")
+assert_tool_call_order(trace, ["search", "email"])
+assert_no_tool_errors(trace)
+
+# With chaos injection:
+assert_graceful_degradation(trace, error_count=2)</code></pre>
+
+            <div class="callout callout-info">
+                <strong>💡 Tip</strong>
+                Combine assertions with chaos injectors to test resilience. If an agent crashes when a tool fails, <code>assert_no_tool_errors</code> catches it.
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="js/docs.js"></script>
+</body>
+</html>

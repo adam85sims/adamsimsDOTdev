@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quickstart — Sentinel</title>
+    <meta name="description" content="Get started with Sentinel in minutes. Install, write your first test, and understand what Sentinel does under the hood.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23E95420'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='18' font-family='monospace'>S</text></svg>">
+    <link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+    <button class="mobile-toggle" aria-label="Menu">☰</button>
+    <a href="/" class="header-brand">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="6" fill="#E95420"/>
+            <path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h1>Sentinel</h1>
+    </a>
+    <nav class="header-nav">
+        <a href="quickstart.html" class="active">Quickstart</a>
+        <a href="chaos.html">Chaos</a>
+        <a href="api.html">API</a>
+        <a href="https://github.com/adam85sims/Sentinel" target="_blank">GitHub</a>
+    </nav>
+</header>
+
+<div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <nav>
+            <div class="nav-group">
+                <div class="nav-group-title">Getting Started</div>
+                <a href="quickstart.html" class="nav-link active">Quickstart</a>
+                <a href="installation.html" class="nav-link">Installation</a>
+                <a href="first-test.html" class="nav-link">Your First Test</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Core Concepts</div>
+                <a href="mock-tools.html" class="nav-link">Mock Tools</a>
+                <a href="assertions.html" class="nav-link">Assertions</a>
+                <a href="traces.html" class="nav-link">Agent Traces</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Chaos Engineering</div>
+                <a href="chaos.html" class="nav-link">Overview</a>
+                <a href="chaos-tool-failures.html" class="nav-link">Tool Failures</a>
+                <a href="chaos-context.html" class="nav-link">Context Degradation</a>
+                <a href="chaos-network.html" class="nav-link">Network Partitions</a>
+                <a href="chaos-memory.html" class="nav-link">Memory Pressure</a>
+                <a href="chaos-presets.html" class="nav-link">Presets</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Framework Adapters</div>
+                <a href="adapters-langchain.html" class="nav-link">LangChain</a>
+                <a href="adapters-crewai.html" class="nav-link">CrewAI</a>
+                <a href="adapters-openai.html" class="nav-link">OpenAI SDK</a>
+                <a href="adapters-custom.html" class="nav-link">Custom Adapters</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Advanced</div>
+                <a href="scenarios.html" class="nav-link">YAML Scenarios</a>
+                <a href="baselines.html" class="nav-link">Baselines</a>
+                <a href="ci-cd.html" class="nav-link">CI/CD Integration</a>
+                <a href="api.html" class="nav-link">API Reference</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Resources</div>
+                <a href="governance.html" class="nav-link">Governance</a>
+                <a href="faq.html" class="nav-link">FAQ</a>
+                <a href="https://github.com/adam85sims/Sentinel" target="_blank" class="nav-link">GitHub →</a>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>Quickstart</h1>
+            <p class="subtitle">Get started with Sentinel in 5 minutes</p>
+        </div>
+
+        <div class="content">
+            <!-- Prerequisites -->
+            <h2>Prerequisites</h2>
+            <ul>
+                <li>Python 3.9 or later</li>
+                <li>Git installed</li>
+                <li>A terminal or command prompt</li>
+            </ul>
+
+            <!-- Installation -->
+            <h2>Installation</h2>
+            <p>Install Sentinel directly from GitHub:</p>
+
+            <pre><code>pip install git+https://github.com/adam85sims/Sentinel.git</code></pre>
+
+            <div class="callout callout-info">
+                <strong>📦 What gets installed?</strong>
+                Sentinel's core library has zero external dependencies. Framework adapters (LangChain, CrewAI, OpenAI SDK) are optional extras you install only if you need them.
+            </div>
+
+            <p>To verify the installation succeeded:</p>
+
+            <pre><code>python -c "import sentinel; print(f'Sentinel {sentinel.__version__} installed successfully')"</code></pre>
+
+            <!-- First Test -->
+            <h2>Your First Test</h2>
+            <p>Create a file called <code>test_quickstart.py</code> and paste this code:</p>
+
+            <pre><code>from sentinel.env import MockTool, EnvironmentBuilder
+from sentinel.models import AgentTrace
+from sentinel.assertions import assert_tool_called, assert_no_tool_errors
+
+# 1. Create a mock environment with a search tool
+env = (EnvironmentBuilder()
+       .mock_tool("search", response={"results": ["Sentinel docs", "Quickstart guide"]})
+       .build())
+
+# 2. Record what your agent does
+trace = AgentTrace()
+
+# 3. Simulate your agent calling the tool
+#    (Replace this with your actual agent's code)
+result = env.tools["search"](query="how to test agents")
+print(f"Tool returned: {result}")
+
+# 4. Assert that the agent behaved correctly
+assert_tool_called(trace, "search")
+assert_no_tool_errors(trace)
+
+print("All assertions passed!")</code></pre>
+
+            <p>Run the test:</p>
+
+            <pre><code>python test_quickstart.py</code></pre>
+
+            <p>You should see output like this:</p>
+
+            <pre><code>Tool returned: {'results': ['Sentinel docs', 'Quickstart guide']}
+All assertions passed!</code></pre>
+
+            <!-- What Just Happened -->
+            <h2>What Just Happened?</h2>
+            <p>Let's break down each step:</p>
+
+            <h3>1. Mock Environment</h3>
+            <p><code>EnvironmentBuilder</code> creates a controlled testing environment where all tools, APIs, and external services are mocked. Your agent never hits real infrastructure — it gets deterministic responses you define.</p>
+
+            <h3>2. Agent Trace</h3>
+            <p><code>AgentTrace</code> records every tool call, error, and state change your agent makes. Think of it as a flight recorder for agent behavior. This is what Sentinel asserts against.</p>
+
+            <h3>3. Tool Execution</h3>
+            <p><code>env.tools["search"]</code> calls the mock tool and logs the call to the trace. In production, this would be your agent calling a real search API — but here it's instant and deterministic.</p>
+
+            <h3>4. Behavioral Assertions</h3>
+            <p><code>assert_tool_called</code> and <code>assert_no_tool_errors</code> verify properties about agent behavior — not just output values. They answer questions like: Did the agent call the right tools? Did it encounter errors? Did it recover gracefully?</p>
+
+            <div class="callout callout-success">
+                <strong>✅ Key Insight</strong>
+                Sentinel tests what agents DO, not just what they SAY. Traditional testing checks if the output matches an expected string. Sentinel checks if the agent's behavior — tool calls, error handling, state management — matches your specifications.
+            </div>
+
+            <!-- Adding Chaos -->
+            <h2>Adding Chaos (Optional)</h2>
+            <p>Want to see what happens when things go wrong? Sentinel can inject failures into your mock tools:</p>
+
+            <pre><code>from sentinel.chaos import inject_failures
+from sentinel.env import EnvironmentBuilder
+
+env = (EnvironmentBuilder()
+       .mock_tool("search", response={"results": []})
+       .build())
+
+# Inject a 30% failure rate into the search tool
+inject_failures(env, tool="search", failure_rate=0.3)
+
+# Your agent now has to handle random tool failures
+# This is where you discover if it retries, degrades gracefully, or crashes</code></pre>
+
+            <p>Learn more in the <a href="chaos.html">Chaos Engineering</a> guide.</p>
+
+            <!-- Next Steps -->
+            <h2>Next Steps</h2>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>🔧 <a href="mock-tools.html">Mock Tools</a></h3>
+                    <p>Learn how to mock any tool, API, or database with configurable responses, latency, and error rates.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>✅ <a href="assertions.html">Assertions</a></h3>
+                    <p>Explore 20+ assertions for tool calls, state consistency, governance, and performance.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>💥 <a href="chaos.html">Chaos Engineering</a></h3>
+                    <p>Inject tool failures, context degradation, network partitions, and memory pressure.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>🔌 <a href="adapters-langchain.html">Framework Adapters</a></h3>
+                    <p>Integrate with LangChain, CrewAI, OpenAI SDK, or build your own adapter.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>📊 <a href="traces.html">Agent Traces</a></h3>
+                    <p>Record and analyze every action your agent takes for debugging and compliance.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>⚡ <a href="first-test.html">Write Your First Test</a></h3>
+                    <p>Build a complete test suite with mock environments, chaos injection, and assertions.</p>
+                </div>
+            </div>
+
+            <!-- Tips -->
+            <div class="callout callout-warning">
+                <strong>💡 Pro Tip</strong>
+                Start simple: mock one tool, write one assertion, then iterate. As your agent grows more complex, add chaos scenarios to ensure it handles the messy reality of production.
+            </div>
+
+            <!-- Footer -->
+            <div style="margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); color: var(--fg-muted); font-size: 0.875rem;">
+                <p>Built by <a href="/">Adam Sims</a> · <a href="https://github.com/adam85sims/Sentinel">GitHub</a> · MIT License</p>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="../js/docs.js"></script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ — Sentinel</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23E95420'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='18' font-family='monospace'>S</text></svg>">
+    <link rel="stylesheet" href="css/docs.css">
+</head>
+<body>
+
+<header class="header">
+    <button class="mobile-toggle" aria-label="Menu">☰</button>
+    <a href="/" class="header-brand">
+        <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="6" fill="#E95420"/><path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <h1>Sentinel</h1>
+    </a>
+    <nav class="header-nav">
+        <a href="quickstart.html">Quickstart</a>
+        <a href="chaos.html">Chaos</a>
+        <a href="api.html">API</a>
+        <a href="https://github.com/adam85sims/Sentinel" target="_blank">GitHub</a>
+    </nav>
+</header>
+
+<div class="layout">
+    <aside class="sidebar">
+        <nav>
+            <div class="nav-group">
+                <div class="nav-group-title">Getting Started</div>
+                <a href="quickstart.html" class="nav-link">Quickstart</a>
+                <a href="installation.html" class="nav-link">Installation</a>
+                <a href="first-test.html" class="nav-link">Your First Test</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Core Concepts</div>
+                <a href="mock-tools.html" class="nav-link">Mock Tools</a>
+                <a href="assertions.html" class="nav-link">Assertions</a>
+                <a href="traces.html" class="nav-link">Agent Traces</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Chaos Engineering</div>
+                <a href="chaos.html" class="nav-link">Overview</a>
+                <a href="chaos-presets.html" class="nav-link">Presets</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Advanced</div>
+                <a href="scenarios.html" class="nav-link">YAML Scenarios</a>
+                <a href="api.html" class="nav-link">API Reference</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Resources</div>
+                <a href="faq.html" class="nav-link active">FAQ</a>
+                <a href="https://github.com/adam85sims/Sentinel" target="_blank" class="nav-link">GitHub →</a>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="main">
+        <div class="page-header">
+            <h1>Frequently Asked Questions</h1>
+            <p class="subtitle">Common questions about Sentinel.</p>
+        </div>
+
+        <div class="content">
+            <h2>What is Sentinel?</h2>
+            <p>Sentinel is an Agent Behavioral Testing Platform. It tests what AI agents <em>do</em>, not just what they <em>say</em>. Unlike output-focused evaluation tools (DeepEval, LangSmith), Sentinel simulates production failure modes and verifies agent behavior under chaos.</p>
+
+            <h2>How is it different from DeepEval or LangSmith?</h2>
+            <p>DeepEval and LangSmith focus on output quality — did the agent say the right thing? Sentinel focuses on behavior — did the agent call the right tools, handle errors gracefully, and maintain state consistency? Sentinel also injects chaos (tool failures, network partitions, memory pressure) that no other tool tests.</p>
+
+            <h2>Does it require a real LLM?</h2>
+            <p>No. Sentinel's core works with mock tools and simulated agents. You can test agent logic without any LLM API calls. When you're ready for integration testing, use the framework adapters (LangChain, CrewAI, OpenAI SDK) with real or mock LLMs.</p>
+
+            <h2>What frameworks does it support?</h2>
+            <p>Built-in adapters for LangChain, CrewAI, and OpenAI Agents SDK. The generic adapter works with any framework through hooks. You can also write custom adapters — see the <a href="adapters-custom.html">Custom Adapters</a> guide.</p>
+
+            <h2>What are chaos injectors?</h2>
+            <p>Chaos injectors simulate production failures: tool timeouts, rate limits, context degradation, network partitions, clock skew, and memory pressure. They wrap mock tools and inject failures deterministically, so you can test how your agent handles real-world problems.</p>
+
+            <h2>Can I use it in CI/CD?</h2>
+            <p>Yes. Sentinel generates JUnit XML reports for CI consumption. The governance audit runs with a pure deterministic comparator (no LLM required). See <a href="ci-cd.html">CI/CD Integration</a> for setup instructions.</p>
+
+            <h2>Is it free?</h2>
+            <p>Yes. Sentinel is open source under the MIT license. Install from GitHub with zero dependencies.</p>
+
+            <h2>What's the governance audit?</h2>
+            <p>Sentinel includes a governance harness that verifies agent claims against independent evidence. It checks test counts, file modifications, and diary entries for consistency. By default, it uses a pure deterministic comparator (no LLM). See <a href="governance.html">Governance</a> for details.</p>
+
+            <h2>How do I test with a real LangChain agent?</h2>
+            <p>Install with <code>pip install sentinel[langchain]</code>, then use the adapter:</p>
+            <pre><code>from sentinel.adapters.langchain import wrap_agent
+from sentinel.env import MockTool
+from sentinel.models import AgentTrace
+
+trace = AgentTrace()
+wrapped = wrap_agent(
+    agent=your_langchain_agent,
+    tool_map={"search": MockTool("search", response="results")},
+    trace=trace,
+)
+result = wrapped.invoke({"messages": [...]})</code></pre>
+
+            <h2>Where can I get help?</h2>
+            <ul>
+                <li><a href="https://github.com/adam85sims/Sentinel/issues">GitHub Issues</a> — bug reports and feature requests</li>
+                <li><a href="https://github.com/adam85sims/Sentinel">GitHub Repo</a> — source code and examples</li>
+                <li><a href="api.html">API Reference</a> — complete API documentation</li>
+            </ul>
+        </div>
+    </main>
+</div>
+
+<script src="js/docs.js"></script>
+</body>
+</html>

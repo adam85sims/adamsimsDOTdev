@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentinel — Agent Behavioral Testing Platform</title>
+    <meta name="description" content="Test what AI agents DO, not just what they SAY. Behavioral testing with chaos injection for LangChain, CrewAI, and OpenAI SDK.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23E95420'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='18' font-family='monospace'>S</text></svg>">
+    <link rel="stylesheet" href="css/docs.css">
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+    <button class="mobile-toggle" aria-label="Menu">☰</button>
+    <a href="/" class="header-brand">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="6" fill="#E95420"/>
+            <path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h1>Sentinel</h1>
+    </a>
+    <nav class="header-nav">
+        <a href="docs/quickstart.html">Quickstart</a>
+        <a href="docs/chaos.html">Chaos</a>
+        <a href="docs/api.html">API</a>
+        <a href="https://github.com/adam85sims/Sentinel" target="_blank">GitHub</a>
+    </nav>
+</header>
+
+<div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <nav>
+            <div class="nav-group">
+                <div class="nav-group-title">Getting Started</div>
+                <a href="docs/quickstart.html" class="nav-link">Quickstart</a>
+                <a href="docs/installation.html" class="nav-link">Installation</a>
+                <a href="docs/first-test.html" class="nav-link">Your First Test</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Core Concepts</div>
+                <a href="docs/mock-tools.html" class="nav-link">Mock Tools</a>
+                <a href="docs/assertions.html" class="nav-link">Assertions</a>
+                <a href="docs/traces.html" class="nav-link">Agent Traces</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Chaos Engineering</div>
+                <a href="docs/chaos.html" class="nav-link">Overview</a>
+                <a href="docs/chaos-tool-failures.html" class="nav-link">Tool Failures</a>
+                <a href="docs/chaos-context.html" class="nav-link">Context Degradation</a>
+                <a href="docs/chaos-network.html" class="nav-link">Network Partitions</a>
+                <a href="docs/chaos-memory.html" class="nav-link">Memory Pressure</a>
+                <a href="docs/chaos-presets.html" class="nav-link">Presets</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Framework Adapters</div>
+                <a href="docs/adapters-langchain.html" class="nav-link">LangChain</a>
+                <a href="docs/adapters-crewai.html" class="nav-link">CrewAI</a>
+                <a href="docs/adapters-openai.html" class="nav-link">OpenAI SDK</a>
+                <a href="docs/adapters-custom.html" class="nav-link">Custom Adapters</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Advanced</div>
+                <a href="docs/scenarios.html" class="nav-link">YAML Scenarios</a>
+                <a href="docs/baselines.html" class="nav-link">Baselines</a>
+                <a href="docs/ci-cd.html" class="nav-link">CI/CD Integration</a>
+                <a href="docs/api.html" class="nav-link">API Reference</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Resources</div>
+                <a href="docs/governance.html" class="nav-link">Governance</a>
+                <a href="docs/faq.html" class="nav-link">FAQ</a>
+                <a href="https://github.com/adam85sims/Sentinel" target="_blank" class="nav-link">GitHub →</a>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Product Hero (placeholder for future product page) -->
+        <div class="product-hero">
+            <h1><span>Sentinel</span></h1>
+            <p class="tagline">Test what agents DO, not just what they SAY.</p>
+            <p style="color: var(--fg-secondary); max-width: 600px; margin: 0 auto 32px;">
+                Agent Behavioral Testing Platform with chaos injection. 
+                Catch tool failures, context degradation, and cascading errors 
+                before they reach production.
+            </p>
+            <a href="docs/quickstart.html" class="cta">Get Started →</a>
+        </div>
+
+        <!-- Feature Grid -->
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h3>🔧 Mock Environment</h3>
+                <p>Tools, APIs, and databases with configurable latency, errors, and rate limits.</p>
+            </div>
+            <div class="feature-card">
+                <h3>💥 Chaos Injection</h3>
+                <p>Tool failures, context degradation, network partitions, clock skew, memory pressure.</p>
+            </div>
+            <div class="feature-card">
+                <h3>✅ Behavioral Assertions</h3>
+                <p>20+ assertions across tool calls, state consistency, governance, and performance.</p>
+            </div>
+            <div class="feature-card">
+                <h3>📊 Regression Reports</h3>
+                <p>Structural diffing, baseline comparison, HTML + JUnit XML output.</p>
+            </div>
+            <div class="feature-card">
+                <h3>🔌 Framework Adapters</h3>
+                <p>LangChain, CrewAI, OpenAI SDK, and custom adapters. Zero deps required.</p>
+            </div>
+            <div class="feature-card">
+                <h3>⚡ Zero Dependencies</h3>
+                <p>Core library has no external dependencies. Install only what you need.</p>
+            </div>
+        </div>
+
+        <!-- Quick Example -->
+        <h2>Quick Example</h2>
+        <pre><code>from sentinel.env import MockTool, EnvironmentBuilder
+from sentinel.models import AgentTrace
+from sentinel.assertions import assert_tool_called, assert_no_tool_errors
+
+# Create mock environment
+env = EnvironmentBuilder().mock_tool("search", response={"results": []}).build()
+
+# Record agent behavior
+trace = AgentTrace()
+
+# Run your agent (replace with actual agent code)
+env.tools["search"](query="test")
+
+# Assert behavioral properties
+assert_tool_called(trace, "search")
+assert_no_tool_errors(trace)</code></pre>
+
+        <h2>Why Sentinel?</h2>
+        <p>88% of AI agents fail in production. The dominant failure modes are operational — tool errors, memory issues, edge cases — NOT hallucination. Yet no testing tool simulates these failures before deployment.</p>
+        <p>Sentinel fills that gap. It's the only testing platform that:</p>
+        <ul>
+            <li><strong>Mocks the entire environment</strong> — not just the LLM, but tools, APIs, and databases</li>
+            <li><strong>Injects real chaos</strong> — network partitions, clock skew, memory pressure, cascading failures</li>
+            <li><strong>Asserts behavior</strong> — tests what agents DO, not just what they SAY</li>
+            <li><strong>Works with any framework</strong> — LangChain, CrewAI, OpenAI SDK, or custom</li>
+        </ul>
+
+        <div class="callout callout-info">
+            <strong>📦 Install</strong>
+            <code>pip install git+https://github.com/adam85sims/Sentinel.git</code>
+        </div>
+
+        <!-- Footer -->
+        <div style="margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); color: var(--fg-muted); font-size: 0.875rem;">
+            <p>Built by <a href="/">Adam Sims</a> · <a href="https://github.com/adam85sims/Sentinel">GitHub</a> · MIT License</p>
+        </div>
+    </main>
+</div>
+
+<script src="js/docs.js"></script>
+</body>
+</html>

@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chaos Engineering — Sentinel</title>
+    <meta name="description" content="Chaos injection for AI agents — tool failures, context degradation, network partitions, clock skew, memory pressure, and cascading failures.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23E95420'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='18' font-family='monospace'>S</text></svg>">
+    <link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+    <button class="mobile-toggle" aria-label="Menu">☰</button>
+    <a href="/" class="header-brand">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="6" fill="#E95420"/>
+            <path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h1>Sentinel</h1>
+    </a>
+    <nav class="header-nav">
+        <a href="quickstart.html">Quickstart</a>
+        <a href="chaos.html" class="active">Chaos</a>
+        <a href="api.html">API</a>
+        <a href="https://github.com/adam85sims/Sentinel" target="_blank">GitHub</a>
+    </nav>
+</header>
+
+<div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <nav>
+            <div class="nav-group">
+                <div class="nav-group-title">Getting Started</div>
+                <a href="quickstart.html" class="nav-link">Quickstart</a>
+                <a href="installation.html" class="nav-link">Installation</a>
+                <a href="first-test.html" class="nav-link">Your First Test</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Core Concepts</div>
+                <a href="mock-tools.html" class="nav-link">Mock Tools</a>
+                <a href="assertions.html" class="nav-link">Assertions</a>
+                <a href="traces.html" class="nav-link">Agent Traces</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Chaos Engineering</div>
+                <a href="chaos.html" class="nav-link active">Overview</a>
+                <a href="chaos-tool-failures.html" class="nav-link">Tool Failures</a>
+                <a href="chaos-context.html" class="nav-link">Context Degradation</a>
+                <a href="chaos-network.html" class="nav-link">Network Partitions</a>
+                <a href="chaos-memory.html" class="nav-link">Memory Pressure</a>
+                <a href="chaos-presets.html" class="nav-link">Presets</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Framework Adapters</div>
+                <a href="adapters-langchain.html" class="nav-link">LangChain</a>
+                <a href="adapters-crewai.html" class="nav-link">CrewAI</a>
+                <a href="adapters-openai.html" class="nav-link">OpenAI SDK</a>
+                <a href="adapters-custom.html" class="nav-link">Custom Adapters</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Advanced</div>
+                <a href="scenarios.html" class="nav-link">YAML Scenarios</a>
+                <a href="baselines.html" class="nav-link">Baselines</a>
+                <a href="ci-cd.html" class="nav-link">CI/CD Integration</a>
+                <a href="api.html" class="nav-link">API Reference</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Resources</div>
+                <a href="governance.html" class="nav-link">Governance</a>
+                <a href="faq.html" class="nav-link">FAQ</a>
+                <a href="https://github.com/adam85sims/Sentinel" target="_blank" class="nav-link">GitHub →</a>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>Chaos Engineering</h1>
+            <p class="subtitle">Inject realistic failures to test agent resilience before production.</p>
+        </div>
+
+        <div class="content">
+            <!-- Overview -->
+            <h2 id="overview">Overview</h2>
+            <p>Sentinel provides a comprehensive chaos injection layer that simulates real-world failure conditions agents face in production. Unlike traditional testing that only checks happy paths, chaos engineering reveals how agents behave when things go wrong — tool failures, degraded context, network issues, and resource exhaustion.</p>
+
+            <div class="callout callout-info">
+                <strong>💡 Why Chaos Engineering?</strong>
+                88% of AI agent failures in production are operational — tool errors, memory issues, and edge cases — not hallucination. Sentinel's chaos injectors catch these failures before deployment.
+            </div>
+
+            <p>The chaos layer includes <strong>9 injectors</strong> across three categories:</p>
+            <ul>
+                <li><strong>Tool & LLM Failures</strong> — Simulate API errors, timeouts, rate limits, and malformed responses</li>
+                <li><strong>Context & Behavior</strong> — Model context window erosion, cascading errors, and agent improvisation</li>
+                <li><strong>Infrastructure</strong> — Simulate network partitions, clock skew, and memory pressure</li>
+            </ul>
+
+            <!-- Quick Start -->
+            <h2 id="quick-start">Quick Start</h2>
+            <p>Here's a minimal example that injects a timeout failure into a search tool:</p>
+
+<pre><code>from sentinel.chaos import ChaosBudget, ToolFailureInjector
+from sentinel.env import MockTool
+
+# Create a mock tool
+search_tool = MockTool("search", response={"results": []})
+
+# Configure chaos injection
+injector = ToolFailureInjector(
+    tool_name="search",
+    failure_type="timeout",      # Simulate API timeout
+    probability=0.5,             # 50% chance of failure
+    seed=42                      # Deterministic for reproducibility
+)
+
+# Wrap the tool with failure injection
+wrapped_tool = injector.wrap(search_tool)
+
+# When called, the tool may raise TimeoutError
+result = wrapped_tool(query="test")  # May fail!</code></pre>
+
+            <!-- Chaos Budget -->
+            <h2 id="chaos-budget">Chaos Budget</h2>
+            <p>The <code>ChaosBudget</code> class manages failure budgets across multiple injectors. It enforces a hard cap on total failures per test run, ensuring chaos injection remains controlled and deterministic.</p>
+
+<pre><code>from sentinel.chaos import ChaosBudget, ToolFailureInjector, LLMFailureInjector
+
+# Create a budget with max 5 failures
+chaos = ChaosBudget(max_failures=5)
+
+# Add injectors using fluent API
+chaos.add(ToolFailureInjector(
+    tool_name="search",
+    failure_type="timeout",
+    probability=0.3
+)).add(LLMFailureInjector(
+    failure_type="rate_limit",
+    after_step=3
+))
+
+# Check budget status
+print(f"Remaining: {chaos.remaining}")      # 5
+print(f"Exhausted: {chaos.exhausted}")      # False
+
+# Records all injections across injectors
+print(f"Total injected: {chaos.total_injected}")</code></pre>
+
+            <div class="callout callout-warning">
+                <strong>⚠️ Budget Enforcement</strong>
+                Once the budget is exhausted, no more failures are injected regardless of individual injector configuration. This prevents runaway chaos from masking test results.
+            </div>
+
+            <!-- Tool Failure Injector -->
+            <h2 id="tool-failures">ToolFailureInjector</h2>
+            <p>The <code>ToolFailureInjector</code> intercepts mock tool calls and injects configurable failures. It supports probability-based injection, deterministic seeding, and five failure types.</p>
+
+            <h3>Failure Types</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Example Error</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>timeout</code></td>
+                        <td>Simulates API timeout after configurable delay</td>
+                        <td><code>TimeoutError: Request timed out after 30s</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>error</code></td>
+                        <td>Generic server error (500)</td>
+                        <td><code>MockToolError: Internal server error</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>rate_limit</code></td>
+                        <td>API rate limit exceeded (429)</td>
+                        <td><code>RateLimitError: Rate limit exceeded (429)</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>malformed</code></td>
+                        <td>Invalid response format (502)</td>
+                        <td><code>MockToolError: Malformed response: invalid data format</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>partial</code></td>
+                        <td>Partial response, connection closed mid-transfer</td>
+                        <td><code>MockToolError: Partial response: connection closed mid-transfer</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Example: Probabilistic Failures</h3>
+<pre><code>from sentinel.chaos import ToolFailureInjector
+from sentinel.env import MockTool
+
+# Create injector with 30% failure rate
+injector = ToolFailureInjector(
+    tool_name="api_call",
+    failure_type="rate_limit",
+    probability=0.3,           # 30% of calls will fail
+    seed=42,                   # Deterministic
+    after_step=2               # Only inject after 2 successful calls
+)
+
+# Wrap multiple tools
+api_tool = MockTool("api_call", response={"status": "ok"})
+wrapped = injector.wrap(api_tool)
+
+# Test resilience
+for i in range(10):
+    try:
+        result = wrapped(endpoint="/data")
+        print(f"Call {i+1}: Success")
+    except Exception as e:
+        print(f"Call {i+1}: {type(e).__name__}")</code></pre>
+
+            <h3>Example: Custom Error Messages</h3>
+<pre><code>injector = ToolFailureInjector(
+    tool_name="database",
+    failure_type="error",
+    error_message="Database connection pool exhausted (max: 100)"
+)
+
+# The injected error will use your custom message
+wrapped = injector.wrap(db_tool)</code></pre>
+
+            <p><a href="chaos-tool-failures.html">📖 Full Tool Failures Guide →</a></p>
+
+            <!-- LLM Failure Injector -->
+            <h2 id="llm-failures">LLMFailureInjector</h2>
+            <p>The <code>LLMFailureInjector</code> simulates failures at the LLM layer — rate limits, timeouts, partial responses, and stream interruptions that occur in production LLM APIs.</p>
+
+            <h3>Failure Types</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>rate_limit</code></td>
+                        <td>LLM API rate limit exceeded</td>
+                    </tr>
+                    <tr>
+                        <td><code>timeout</code></td>
+                        <td>LLM API request timed out</td>
+                    </tr>
+                    <tr>
+                        <td><code>partial_response</code></td>
+                        <td>Stream ended prematurely</td>
+                    </tr>
+                    <tr>
+                        <td><code>stream_interrupt</code></td>
+                        <td>Connection lost during generation</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Example: Step-Based Injection</h3>
+<pre><code>from sentinel.chaos import LLMFailureInjector
+
+# Inject rate limit after step 5
+injector = LLMFailureInjector(
+    failure_type="rate_limit",
+    after_step=5,              # Only inject after step 5
+    probability=0.4            # 40% chance per eligible step
+)
+
+# Check each step
+for step_id in range(10):
+    failure = injector.check_step(step_id)
+    if failure:
+        print(f"Step {step_id}: {failure['message']}")
+    else:
+        print(f"Step {step_id}: OK")
+
+# Get exception for error handling
+error = injector.get_error(step_id=7)
+if error:
+    raise error</code></pre>
+
+            <!-- Context Degradation -->
+            <h2 id="context-degradation">ContextDegradation</h2>
+            <p>The <code>ContextDegradation</code> simulator models context window erosion during long-running agent tasks. As agents execute more steps, their effective context degrades — earlier instructions get truncated, tool results accumulate noise, or the system prompt drifts from its original intent.</p>
+
+            <h3>Strategies</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Strategy</th>
+                        <th>Description</th>
+                        <th>Use Case</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>truncation</code></td>
+                        <td>Progressively removes earlier context entries</td>
+                        <td>Simulates context window pressure in long conversations</td>
+                    </tr>
+                    <tr>
+                        <td><code>noise</code></td>
+                        <td>Injects random perturbations into tool results</td>
+                        <td>Models signal degradation in noisy environments</td>
+                    </tr>
+                    <tr>
+                        <td><code>drift</code></td>
+                        <td>Gradually shifts system prompt instructions</td>
+                        <td>Tests agent stability when instructions change</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Example: Context Truncation</h3>
+<pre><code>from sentinel.chaos import ContextDegradation
+
+# Configure truncation degradation
+degradation = ContextDegradation(
+    strategy="truncation",
+    start_step=5,              # Begin degrading at step 5
+    degradation_rate=0.2,      # Moderate erosion speed
+    max_truncation_pct=0.5,    # Max 50% context removal
+    seed=42
+)
+
+# Simulate agent context over time
+context = [
+    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user", "content": "What is Python?"},
+    {"role": "assistant", "content": "Python is a programming language..."},
+    {"role": "user", "content": "Tell me more about lists."},
+]
+
+# Process step 10 — context will be degraded
+result = degradation.on_step(step_id=10, context=context)
+print(f"Degradation level: {result['degradation_level']:.2f}")
+print(f"Context entries: {len(result['context'])}")  # Reduced!</code></pre>
+
+            <h3>Example: Instruction Drift</h3>
+<pre><code># Drift strategy modifies the system prompt
+drift_degradation = ContextDegradation(
+    strategy="drift",
+    degradation_rate=0.1,
+    seed=42
+)
+
+system_prompt = "Always verify user identity before proceeding."
+
+# After many steps, instructions drift
+result = drift_degradation.on_step(
+    step_id=20,
+    system_prompt=system_prompt
+)
+print(f"Original: {system_prompt}")
+print(f"Degraded: {result['system_prompt']}")</code></pre>
+
+            <p><a href="chaos-context.html">📖 Full Context Degradation Guide →</a></p>
+
+            <!-- Cascading Failures -->
+            <h2 id="cascading-failures">CascadingFailures</h2>
+            <p>The <code>CascadingFailures</code> injector simulates error propagation in multi-agent systems. When one component fails, related components often fail shortly after — a database timeout cascades to API errors, which cascade to user-facing failures.</p>
+
+            <h3>Example: Multi-Agent Cascade</h3>
+<pre><code>from sentinel.chaos import CascadingFailures
+
+# Configure cascade behavior
+cascade = CascadingFailures(
+    cascade_probability=0.7,   # 70% chance of cascade per failure
+    max_cascade_depth=3,       # Max 3 levels deep
+    propagation_delay_steps=1, # Cascade in next step
+    seed=42
+)
+
+# Simulate a root failure
+root_failure = {
+    "tool_name": "database",
+    "error_type": "timeout",
+    "step_id": 1,
+    "message": "Database connection timeout"
+}
+
+# Process the failure — returns cascading failures
+cascades = cascade.on_failure(root_failure, current_step=1)
+
+for c in cascades:
+    print(f"Depth {c['cascade_depth']}: {c['tool_name']} "
+          f"failed with {c['error_type']}")
+
+# Check cascade summary
+summary = cascade.summary()
+print(f"Total cascades: {summary['total_cascades']}")
+print(f"Max depth reached: {summary['max_depth_reached']}")</code></pre>
+
+            <h3>Cascade Patterns</h3>
+            <p>Sentinel uses intelligent cascade mapping based on common failure patterns:</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Root Cause</th>
+                        <th>Cascades To</th>
+                        <th>Error Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>database</code></td>
+                        <td><code>api_server</code></td>
+                        <td><code>service_unavailable</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>api_server</code></td>
+                        <td><code>user_interface</code></td>
+                        <td><code>service_unavailable</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>auth</code></td>
+                        <td><code>api_server</code></td>
+                        <td><code>service_unavailable</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>cache</code></td>
+                        <td><code>database</code></td>
+                        <td><code>timeout</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Spec Drift -->
+            <h2 id="spec-drift">SpecDrift</h2>
+            <p>The <code>SpecDrift</code> injector simulates agent improvisation when operating under pressure. When agents face timeouts or resource constraints, they sometimes deviate from the original specification to "make it work" — skipping validation, using fallbacks, or substituting tools.</p>
+
+            <h3>Drift Types</h3>
+            <ul>
+                <li><code>skip_validation</code> — Agent skips input validation step</li>
+                <li><code>use_fallback</code> — Uses fallback value instead of computing</li>
+                <li><code>reorder_steps</code> — Reorders execution steps for efficiency</li>
+                <li><code>substitute_tool</code> — Uses different tool than specified</li>
+                <li><code>truncate_output</code> — Truncates output to save tokens</li>
+                <li><code>approximate_result</code> — Approximates instead of precise computation</li>
+            </ul>
+
+            <h3>Example: Detecting Spec Drift</h3>
+<pre><code>from sentinel.chaos import SpecDrift
+
+# Configure drift injection
+drift = SpecDrift(
+    intensity="moderate",     # subtle | moderate | aggressive
+    start_step=5,             # Begin checking at step 5
+    probability=0.2,          # 20% base probability
+    trigger_events=["timeout", "rate_limit"],  # Errors amplify drift
+    seed=42
+)
+
+# Simulate agent steps with errors
+recent_errors = ["timeout", "error"]
+
+for step_id in range(1, 15):
+    event = drift.check_step(step_id, recent_errors=recent_errors)
+    if event:
+        print(f"Step {step_id}: {event['description']}")
+        print(f"  Magnitude: {event['drift_magnitude']:.2f}")
+        print(f"  Cumulative: {event['cumulative_drift']:.3f}")
+
+# Get drift assessment
+score = drift.get_drift_score()
+print(f"\nFinal drift score: {score['cumulative_drift']:.3f}")
+print(f"Total drift events: {score['total_events']}")</code></pre>
+
+            <!-- Network Partition (NEW) -->
+            <h2 id="network-partition">NetworkPartition <span style="color: var(--success); font-size: 0.75rem; font-weight: 600; vertical-align: super;">NEW</span></h2>
+            <p>The <code>NetworkPartition</code> injector simulates network connectivity issues between agents and services. It maintains a connectivity matrix that defines which services can reach each other, allowing you to test agent behavior during partial or complete network outages.</p>
+
+            <h3>Features</h3>
+            <ul>
+                <li><strong>Connectivity Matrix</strong> — Define which services can communicate</li>
+                <li><strong>Dynamic Partitioning</strong> — Add/remove partitions during test execution</li>
+                <li><strong>Partial Connectivity</strong> — Simulate degraded network (high latency, packet loss)</li>
+                <li><strong>Recovery Simulation</strong> — Test agent behavior when connectivity is restored</li>
+            </ul>
+
+            <h3>Example: Network Partition</h3>
+<pre><code>from sentinel.chaos import NetworkPartition
+
+# Create network partition injector
+partition = NetworkPartition(
+    seed=42
+)
+
+# Define initial connectivity matrix
+# All services can reach each other
+services = ["api_gateway", "auth_service", "database", "cache"]
+partition.set_connectivity_matrix({
+    "api_gateway": {"auth_service": True, "database": True, "cache": True},
+    "auth_service": {"api_gateway": True, "database": True, "cache": False},
+    "database": {"api_gateway": False, "auth_service": False, "cache": False},
+    "cache": {"api_gateway": True, "auth_service": False, "database": False},
+})
+
+# Check if two services can communicate
+can_communicate = partition.check_connectivity("api_gateway", "database")
+print(f"API Gateway → Database: {can_communicate}")  # True
+
+# Simulate partition — disconnect database from everything
+partition.partition_service("database")
+can_communicate = partition.check_connectivity("api_gateway", "database")
+print(f"After partition: {can_communicate}")  # False
+
+# Check which services are isolated
+isolated = partition.get_isolated_services()
+print(f"Isolated services: {isolated}")  # ['database']
+
+# Restore connectivity
+partition.restore_service("database")</code></pre>
+
+            <h3>Example: Partial Network Degradation</h3>
+<pre><code># Simulate high-latency network
+partition = NetworkPartition(seed=42)
+
+# Configure degradation parameters
+partition.set_degradation(
+    latency_ms=500,           # 500ms added latency
+    packet_loss_rate=0.1,     # 10% packet loss
+    jitter_ms=100             # ±100ms jitter
+)
+
+# Check degraded connection
+metrics = partition.get_connection_metrics("api_gateway", "database")
+print(f"Latency: {metrics['latency_ms']}ms")
+print(f"Packet loss: {metrics['packet_loss_rate']*100}%")</code></pre>
+
+            <p><a href="chaos-network.html">📖 Full Network Partition Guide →</a></p>
+
+            <!-- Clock Skew (NEW) -->
+            <h2 id="clock-skew">ClockSkew <span style="color: var(--success); font-size: 0.75rem; font-weight: 600; vertical-align: super;">NEW</span></h2>
+            <p>The <code>ClockSkew</code> injector simulates time drift between distributed components. In production, servers often have slightly different system times, which can cause issues with timestamps, token expiration, session management, and distributed consensus.</p>
+
+            <h3>Features</h3>
+            <ul>
+                <li><strong>Time Drift Simulation</strong> — Add configurable offset to system time</li>
+                <li><strong>Gradual Drift</strong> — Simulate clock that slowly drifts over time</li>
+                <li><strong>Jump Events</strong> — Simulate sudden time changes (NTP sync, manual adjustment)</li>
+                <li><strong>Component-Specific Skew</strong> — Different drift rates per service</li>
+            </ul>
+
+            <h3>Example: Simulating Clock Skew</h3>
+<pre><code>from sentinel.chaos import ClockSkew
+from datetime import datetime, timedelta
+
+# Create clock skew injector
+clock = ClockSkew(
+    seed=42
+)
+
+# Set different time offsets for services
+clock.set_skew("api_gateway", offset_ms=0)       # Reference time
+clock.set_skew("auth_service", offset_ms=500)    # 500ms ahead
+clock.set_skew("database", offset_ms=-200)       # 200ms behind
+
+# Get current time for each service
+gateway_time = clock.get_time("api_gateway")
+auth_time = clock.get_time("auth_service")
+db_time = clock.get_time("database")
+
+print(f"API Gateway: {gateway_time}")
+print(f"Auth Service: {auth_time} (+500ms)")
+print(f"Database: {db_time} (-200ms)")
+
+# Check if token will expire based on service time
+token_issued = gateway_time
+token_ttl = timedelta(seconds=30)
+is_valid = clock.check_token_valid(
+    service="auth_service",
+    token_issued_at=token_issued,
+    ttl=token_ttl
+)
+print(f"Token valid at auth_service: {is_valid}")</code></pre>
+
+            <h3>Example: Gradual Drift</h3>
+<pre><code># Configure gradual drift — clock slowly diverges
+clock = ClockSkew(
+    drift_rate_ms_per_second=10,  # 10ms drift per second
+    seed=42
+)
+
+# Simulate time passing
+for i in range(10):
+    clock.advance(seconds=1)
+    skew = clock.get_current_skew("database")
+    print(f"Second {i+1}: {skew}ms drift")</code></pre>
+
+            <h3>Example: Time Jump Event</h3>
+<pre><code># Simulate NTP sync causing sudden time jump
+clock.jump("api_gateway", offset_ms=-5000)  # Jump back 5 seconds
+
+# Or simulate forward jump
+clock.jump("database", offset_ms=30000)     # Jump forward 30 seconds
+
+# Check for time anomalies
+anomalies = clock.detect_anomalies(threshold_ms=1000)
+for anomaly in anomalies:
+    print(f"Anomaly: {anomaly['service']} "
+          f"drifted {anomaly['skew_ms']}ms")</code></pre>
+
+            <!-- Memory Pressure (NEW) -->
+            <h2 id="memory-pressure">MemoryPressure <span style="color: var(--success); font-size: 0.75rem; font-weight: 600; vertical-align: super;">NEW</span></h2>
+            <p>The <code>MemoryPressure</code> injector simulates context exhaustion and memory constraints that agents face in production. It models scenarios where agents run out of context window space, encounter OOM errors, or need to manage limited resources.</p>
+
+            <h3>Features</h3>
+            <ul>
+                <li><strong>Context Window Exhaustion</strong> — Simulate reaching token limits</li>
+                <li><strong>Memory Allocation Failures</strong> — Inject OOM-like errors</li>
+                <li><strong>Garbage Collection Pressure</strong> — Model memory cleanup delays</li>
+                <li><strong>Resource Contention</strong> — Simulate shared memory conflicts</li>
+            </ul>
+
+            <h3>Example: Context Window Exhaustion</h3>
+<pre><code>from sentinel.chaos import MemoryPressure
+
+# Create memory pressure injector
+memory = MemoryPressure(
+    max_context_tokens=8192,    # Simulated context limit
+    seed=42
+)
+
+# Track token usage
+for step in range(20):
+    # Simulate adding context
+    tokens_used = memory.add_context(
+        step_id=step,
+        content=f"Step {step} result data..."
+    )
+    
+    # Check if approaching limit
+    pressure = memory.get_pressure_level()
+    print(f"Step {step}: {tokens_used} tokens, "
+          f"pressure: {pressure:.2f}")
+    
+    # Check if context was evicted
+    if memory.was_context_evicted(step):
+        print(f"  ⚠️ Context evicted at step {step}!")</code></pre>
+
+            <h3>Example: Memory Allocation Failure</h3>
+<pre><code># Configure aggressive memory pressure
+memory = MemoryPressure(
+    max_context_tokens=4096,    # Low limit for testing
+    eviction_strategy="lru",    # Least recently used eviction
+    simulate_oom=True,          # Inject OOM errors
+    oom_probability=0.1,        # 10% chance of OOM
+    seed=42
+)
+
+# Try to allocate memory
+try:
+    memory.allocate(
+        component="agent_buffer",
+        size_tokens=2048
+    )
+except MemoryError as e:
+    print(f"OOM Error: {e}")
+
+# Check memory state
+state = memory.get_memory_state()
+print(f"Allocated: {state['allocated_tokens']}")
+print(f"Available: {state['available_tokens']}")
+print(f"Pressure: {state['pressure_level']}")</code></pre>
+
+            <h3>Example: Garbage Collection Pressure</h3>
+<pre><code># Simulate GC pauses during memory pressure
+memory = MemoryPressure(
+    gc_pause_ms=100,            # 100ms GC pause
+    gc_frequency_steps=5,       # GC every 5 steps
+    seed=42
+)
+
+# Monitor GC impact
+for step in range(15):
+    result = memory.process_step(step)
+    if result.get("gc_triggered"):
+        print(f"Step {step}: GC pause {result['gc_pause_ms']}ms")</code></pre>
+
+            <p><a href="chaos-memory.html">📖 Full Memory Pressure Guide →</a></p>
+
+            <!-- Composing Injectors -->
+            <h2 id="composing">Composing Multiple Injectors</h2>
+            <p>The real power of Sentinel's chaos engineering comes from combining multiple injectors to simulate realistic production conditions. The <code>ChaosBudget</code> class orchestrates multiple injectors with a shared failure budget.</p>
+
+            <h3>Example: Realistic Production Scenario</h3>
+<pre><code>from sentinel.chaos import (
+    ChaosBudget, ToolFailureInjector, ContextDegradation,
+    CascadingFailures, NetworkPartition, MemoryPressure
+)
+
+# Create a realistic chaos scenario
+chaos = ChaosBudget(max_failures=10)
+
+# Layer 1: Network issues
+network = NetworkPartition(seed=42)
+network.set_connectivity_matrix({
+    "agent": {"api": True, "database": True},
+    "api": {"database": True},
+})
+
+# Layer 2: Tool failures triggered by network issues
+tool_failures = ToolFailureInjector(
+    tool_name="api",
+    failure_type="timeout",
+    probability=0.3,
+    seed=42
+)
+
+# Layer 3: Context degradation under load
+context_deg = ContextDegradation(
+    strategy="truncation",
+    degradation_rate=0.15,
+    seed=42
+)
+
+# Layer 4: Cascading failures
+cascade = CascadingFailures(
+    cascade_probability=0.6,
+    max_cascade_depth=3,
+    seed=42
+)
+
+# Layer 5: Memory pressure
+memory = MemoryPressure(
+    max_context_tokens=8192,
+    seed=42
+)
+
+# Compose everything
+chaos.add(tool_failures)
+chaos.add(context_deg)
+
+# Run your agent test with chaos
+print(f"Chaos budget: {chaos.remaining} failures remaining")</code></pre>
+
+            <!-- Presets -->
+            <h2 id="presets">Chaos Presets</h2>
+            <p>Sentinel includes pre-configured chaos scenarios for common failure patterns. These presets combine multiple injectors with realistic parameters.</p>
+
+            <h3>Available Presets</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Preset</th>
+                        <th>Description</th>
+                        <th>Use Case</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>mild_degradation</code></td>
+                        <td>Low-probability tool failures with context truncation</td>
+                        <td>Smoke testing, CI/CD pipelines</td>
+                    </tr>
+                    <tr>
+                        <td><code>network_instability</code></td>
+                        <td>Intermittent network partitions and timeouts</td>
+                        <td>Testing retry logic and circuit breakers</td>
+                    </tr>
+                    <tr>
+                        <td><code>memory_exhaustion</code></td>
+                        <td>Context window pressure with OOM simulation</td>
+                        <td>Long-running agent tasks</td>
+                    </tr>
+                    <tr>
+                        <td><code>cascade_failure</code></td>
+                        <td>Database timeout cascading through services</td>
+                        <td>Testing error propagation handling</td>
+                    </tr>
+                    <tr>
+                        <td><code>full_outage</code></td>
+                        <td>Complete service unavailability</td>
+                        <td>Testing graceful degradation</td>
+                    </tr>
+                    <tr>
+                        <td><code>clock_chaos</code></td>
+                        <td>Time drift across distributed components</td>
+                        <td>Testing timestamp-dependent logic</td>
+                    </tr>
+                    <tr>
+                        <td><code>production_realistic</code></td>
+                        <td>Mixed failures mirroring real production</td>
+                        <td>Pre-deployment validation</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Example: Using Presets</h3>
+<pre><code>from sentinel.chaos.presets import load_preset
+
+# Load a pre-configured chaos scenario
+chaos = load_preset("network_instability")
+
+# Or customize a preset
+chaos = load_preset("mild_degradation")
+chaos.max_failures = 20  # Override budget
+
+# List available presets
+from sentinel.chaos.presets import list_presets
+for name, description in list_presets().items():
+    print(f"{name}: {description}")</code></pre>
+
+            <p><a href="chaos-presets.html">📖 Full Presets Guide →</a></p>
+
+            <!-- Assertions -->
+            <h2 id="assertions">Chaos Assertions</h2>
+            <p>Sentinel provides specialized assertions for validating agent behavior under chaos conditions.</p>
+
+            <h3>Example: Asserting Resilience</h3>
+<pre><code>from sentinel.assertions import (
+    assert_tool_called,
+    assert_no_tool_errors,
+    assert_chaos_resilience
+)
+
+# Run agent with chaos injection
+# ... (agent execution code) ...
+
+# Assert the agent handled failures gracefully
+assert_chaos_resilience(
+    trace=agent_trace,
+    chaos_budget=chaos,
+    max_failure_rate=0.5,      # Agent should succeed >50% of the time
+    require_retry=True,         # Agent should retry on failure
+    require_fallback=True       # Agent should have fallback logic
+)
+
+# Check specific tool was called despite chaos
+assert_tool_called(trace, "search")
+
+# Ensure no unhandled errors
+assert_no_tool_errors(trace)</code></pre>
+
+            <!-- Injection Records -->
+            <h2 id="records">Injection Records</h2>
+            <p>Every chaos injection is logged in an <code>InjectionRecord</code> for post-hoc analysis and debugging.</p>
+
+            <h3>Example: Analyzing Injection History</h3>
+<pre><code># Get all injection records
+records = chaos.records
+
+for record in records:
+    print(f"[{record.timestamp:.2f}] {record.injector_type}: "
+          f"{record.failure_type} → {record.target}")
+    if record.message:
+        print(f"  Message: {record.message}")
+
+# Group by failure type
+by_type = chaos.records_by_failure
+for failure_type, records in by_type.items():
+    print(f"\n{failure_type}: {len(records)} injections")
+
+# Get summary
+summary = chaos.summary()
+print(f"\nChaos Summary:")
+print(f"  Total injected: {summary['total_injected']}")
+print(f"  Budget remaining: {summary['remaining']}")
+print(f"  Injectors: {summary['injector_count']}")</code></pre>
+
+            <!-- Best Practices -->
+            <h2 id="best-practices">Best Practices</h2>
+            <ul>
+                <li><strong>Start with presets</strong> — Use pre-configured scenarios before building custom chaos</li>
+                <li><strong>Use seeds for determinism</strong> — Always set <code>seed</code> parameter for reproducible tests</li>
+                <li><strong>Set failure budgets</strong> — Prevent runaway chaos from masking test results</li>
+                <li><strong>Layer injectors</strong> — Combine multiple failure types for realistic scenarios</li>
+                <li><strong>Assert resilience</strong> — Use chaos assertions to validate agent recovery behavior</li>
+                <li><strong>Analyze records</strong> — Review injection history to understand failure patterns</li>
+            </ul>
+
+            <div class="callout callout-success">
+                <strong>✅ Next Steps</strong>
+                Explore the detailed guides for each injector type to learn advanced configuration options and patterns.
+            </div>
+
+            <!-- Footer -->
+            <div style="margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); color: var(--fg-muted); font-size: 0.875rem;">
+                <p>Built by <a href="/">Adam Sims</a> · <a href="https://github.com/adam85sims/Sentinel">GitHub</a> · MIT License</p>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="../js/docs.js"></script>
+</body>
+</html>

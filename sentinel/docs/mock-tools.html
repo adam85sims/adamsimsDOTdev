@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock Tools — Sentinel</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23E95420'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='18' font-family='monospace'>S</text></svg>">
+    <link rel="stylesheet" href="css/docs.css">
+</head>
+<body>
+
+<header class="header">
+    <button class="mobile-toggle" aria-label="Menu">☰</button>
+    <a href="/" class="header-brand">
+        <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="6" fill="#E95420"/><path d="M8 16h4l3-6 5 12 3-6h4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <h1>Sentinel</h1>
+    </a>
+    <nav class="header-nav">
+        <a href="quickstart.html">Quickstart</a>
+        <a href="chaos.html">Chaos</a>
+        <a href="api.html">API</a>
+        <a href="https://github.com/adam85sims/Sentinel" target="_blank">GitHub</a>
+    </nav>
+</header>
+
+<div class="layout">
+    <aside class="sidebar">
+        <nav>
+            <div class="nav-group">
+                <div class="nav-group-title">Getting Started</div>
+                <a href="quickstart.html" class="nav-link">Quickstart</a>
+                <a href="installation.html" class="nav-link">Installation</a>
+                <a href="first-test.html" class="nav-link">Your First Test</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Core Concepts</div>
+                <a href="mock-tools.html" class="nav-link active">Mock Tools</a>
+                <a href="assertions.html" class="nav-link">Assertions</a>
+                <a href="traces.html" class="nav-link">Agent Traces</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Chaos Engineering</div>
+                <a href="chaos.html" class="nav-link">Overview</a>
+                <a href="chaos-presets.html" class="nav-link">Presets</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Advanced</div>
+                <a href="scenarios.html" class="nav-link">YAML Scenarios</a>
+                <a href="api.html" class="nav-link">API Reference</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">Resources</div>
+                <a href="faq.html" class="nav-link">FAQ</a>
+                <a href="https://github.com/adam85sims/Sentinel" target="_blank" class="nav-link">GitHub →</a>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="main">
+        <div class="page-header">
+            <h1>Mock Tools</h1>
+            <p class="subtitle">Simulate tools, APIs, and databases with configurable behavior.</p>
+        </div>
+
+        <div class="content">
+            <p>Sentinel's mock layer replaces real tool calls with controllable fakes. This lets you test agent behavior without external dependencies.</p>
+
+            <h2>MockTool</h2>
+            <p>The core building block. A mock tool that returns canned responses:</p>
+
+            <h3>Static response</h3>
+            <pre><code>from sentinel.env import MockTool
+
+tool = MockTool("search", response={"results": ["Python is great"]})
+result = tool(query="test")  # Returns {"results": ["Python is great"]}</code></pre>
+
+            <h3>Dynamic response</h3>
+            <pre><code>tool = MockTool(
+    "calculator",
+    response_fn=lambda expr: {"result": eval(expr)}
+)
+result = tool(expr="2 + 2")  # Returns {"result": 4}</code></pre>
+
+            <h3>Error injection</h3>
+            <pre><code>from sentinel.env import RateLimitError, TimeoutError
+
+# Always fail
+tool = MockTool("api", side_effect=RateLimitError("Too many requests"))
+
+# Fail probabilistically
+tool = MockTool("flaky", response="ok", error_probability=0.3)</code></pre>
+
+            <h3>Latency simulation</h3>
+            <pre><code>tool = MockTool("slow_api", response="data", latency_ms=500)</code></pre>
+
+            <h2>EnvironmentBuilder</h2>
+            <p>Compose multiple tools into a test environment:</p>
+
+            <pre><code>from sentinel.env import EnvironmentBuilder
+
+env = (
+    EnvironmentBuilder()
+    .mock_tool("search", response={"results": []})
+    .mock_tool("email", response="sent")
+    .mock_tool("database", response={"users": []})
+    .mock_api(base_url="https://api.example.com")
+    .mock_database("users_db")
+    .build()
+)
+
+# Access tools
+result = env.tools["search"](query="test")</code></pre>
+
+            <h2>MockAPI</h2>
+            <p>Simulate REST/GraphQL APIs with route matching:</p>
+
+            <pre><code>env = (
+    EnvironmentBuilder()
+    .mock_api(
+        base_url="https://api.example.com",
+        routes={
+            "GET /users": {"users": [{"id": 1}]},
+            "POST /users": {"created": True},
+        }
+    )
+    .build()
+)</code></pre>
+
+            <h2>MockDatabase</h2>
+            <p>In-memory database with CRUD operations:</p>
+
+            <pre><code>env = (
+    EnvironmentBuilder()
+    .mock_database("users")
+    .build()
+)
+
+# Operations available through the database
+db = env.databases["users"]
+db.insert({"id": 1, "name": "Alice"})
+results = db.query("SELECT * FROM users WHERE id = 1")</code></pre>
+
+            <div class="callout callout-info">
+                <strong>💡 Chaos Integration</strong>
+                All mock tools work with Sentinel's chaos injectors. Wrap a tool with <code>ToolFailureInjector.wrap(tool)</code> to add failure injection.
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="js/docs.js"></script>
+</body>
+</html>
