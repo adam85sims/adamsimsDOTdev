@@ -799,19 +799,24 @@ print(f"Chaos budget: {chaos.remaining} failures remaining")</code></pre>
             </table>
 
             <h3>Example: Using Presets</h3>
-<pre><code>from sentinel.chaos.presets import load_preset
+<pre><code>from sentinel.chaos_presets import PRESETS
 
 # Load a pre-configured chaos scenario
-chaos = load_preset("network_instability")
+chaos = PRESETS["network_partition"]
 
 # Or customize a preset
-chaos = load_preset("mild_degradation")
-chaos.max_failures = 20  # Override budget
+chaos = PRESETS["production_incident"]
+# Wrap in a ChaosBudget for control
+from sentinel.chaos import ChaosBudget
+budget = ChaosBudget(max_failures=20)
+for injector in chaos:
+    if hasattr(injector, 'wrap'):
+        budget.add(injector)
 
 # List available presets
-from sentinel.chaos.presets import list_presets
-for name, description in list_presets().items():
-    print(f"{name}: {description}")</code></pre>
+from sentinel.chaos_presets import PRESETS
+for name, injectors in PRESETS.items():
+    print(f"{name}: {len(injectors)} injectors")</code></pre>
 
             <p><a href="chaos-presets.html">📖 Full Presets Guide →</a></p>
 
@@ -823,20 +828,14 @@ for name, description in list_presets().items():
 <pre><code>from sentinel.assertions import (
     assert_tool_called,
     assert_no_tool_errors,
-    assert_chaos_resilience
+    assert_graceful_degradation
 )
 
 # Run agent with chaos injection
 # ... (agent execution code) ...
 
 # Assert the agent handled failures gracefully
-assert_chaos_resilience(
-    trace=agent_trace,
-    chaos_budget=chaos,
-    max_failure_rate=0.5,      # Agent should succeed >50% of the time
-    require_retry=True,         # Agent should retry on failure
-    require_fallback=True       # Agent should have fallback logic
-)
+assert_graceful_degradation(agent_trace)
 
 # Check specific tool was called despite chaos
 assert_tool_called(trace, "search")

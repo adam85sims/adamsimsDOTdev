@@ -371,7 +371,7 @@ for record in injector.records:
 <pre><code>import pytest
 from sentinel.chaos import ChaosBudget, ToolFailureInjector
 from sentinel.env import MockTool
-from sentinel.assertions import assert_no_silent_failure, assert_agent_recovers
+from sentinel.assertions import assert_no_silent_failure, assert_graceful_degradation
 
 def test_agent_handles_search_failures():
     """Agent should retry or fall back when search fails."""
@@ -400,7 +400,7 @@ def test_agent_handles_search_failures():
 
     # Verify the agent handled errors (not just lucky with non-failing calls)
     if chaos.total_injected > 0:
-        assert_agent_recovers(output, chaos.records)
+        assert_graceful_degradation(output)
 
     print(f"Handled {chaos.total_injected} failures successfully")</code></pre>
 

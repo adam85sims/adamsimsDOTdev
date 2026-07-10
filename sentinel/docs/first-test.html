@@ -152,16 +152,21 @@ def test_search_agent(trace, env):
             <pre><code>import pytest
 from sentinel.runner import sentinel_test
 from sentinel.env import EnvironmentBuilder
-from sentinel.chaos import ChaosBudget, tool_failure
+from sentinel.chaos import ChaosBudget, ToolFailureInjector
 from sentinel.assertions import assert_tool_called
 
 @sentinel_test(
     env=(EnvironmentBuilder()
         .mock_tool("search", response={"results": ["Refund Policy"]})
         .build()),
-    chaos=ChaosBudget([
-        tool_failure("search", failure_rate=0.3),
-    ]),
+    chaos=ChaosBudget(max_failures=5).add(
+        ToolFailureInjector(
+            tool_name="search",
+            failure_type="error",
+            probability=0.3,
+            seed=42,
+        )
+    ),
     task="Search with 30% failure rate",
 )
 def test_search_handles_failures(trace, env):
